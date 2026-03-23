@@ -35,7 +35,15 @@ const STOCKS = [
 const CRYPTOS = [
   { symbol: "LINK", name: "Chainlink", price: 14.82, change: 0.43, changePercent: 2.99, type: "crypto" },
 ];
-const KNOWN_ASSETS = [
+const FINNHUB_KEY = "d70spb1r01ql6rg0hrrgd70spb1r01ql6rg0hrs0";
+
+// CoinGecko IDs for crypto symbols
+const COINGECKO_IDS = {
+  LINK:"chainlink", BTC:"bitcoin", ETH:"ethereum", SOL:"solana",
+  BNB:"binancecoin", XRP:"ripple", DOGE:"dogecoin", ADA:"cardano", AVAX:"avalanche-2",
+};
+
+
   { symbol: "AAPL",  name: "Apple Inc.",            price: 227.52,  type: "stock"  },
   { symbol: "TSLA",  name: "Tesla Inc.",             price: 248.71,  type: "stock"  },
   { symbol: "MSFT",  name: "Microsoft Corp.",        price: 415.30,  type: "stock"  },
@@ -186,18 +194,76 @@ function App() {
   const currency = CURRENCIES.find(c => c.code === currencyCode);
   const fmt = makeFmt(currency);
 
-  // Live price simulation
-  useEffect(() => {
-    const id = setInterval(() => {
-      setAssets(prev => prev.map(a => {
-        const delta = (Math.random()-0.49)*(a.type==="crypto"?a.price*0.003:a.price*0.001);
-        const newPrice = Math.max(a.price+delta, 0.01);
-        const newChange = a.change+delta;
-        const newPct = (newChange/(newPrice-newChange))*100;
-        return { ...a, price:newPrice, change:newChange, changePercent:newPct };
+  const [priceStatus, setPriceStatus] = useState("loading"); // "loading" | "live" | "error"
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const fetchPrices = useCallback(async () => {
+    try {
+      // --- Stocks via Finnhub ---
+      const stockSymbols = assets.filter(a=>a.type==="stock").map(a=>a.symbol);
+      const stockResults = await Promise.all(stockSymbols.map(async sym => {
+        const [quoteRes, profileRes] = await Promise.all([
+          fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`),
+          fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${sym}&token=${FINNHUB_KEY}`)
+        ]);
+        const quote   = await quoteRes.json();
+        const profile = await profileRes.json();
+        if (!quote.c) return null;
+        return {
+          symbol: sym,
+          price: quote.c,
+          change: quote.d,
+          changePercent: quote.dp,
+          name: profile.name || sym,
+          type: "stock",
+        };
       }));
-      setTicker(t => t+1);
-    }, 2000);
+
+      // --- Crypto via CoinGecko ---
+      const cryptoAssets = assets.filter(a=>a.type==="crypto");
+      const cgIds = cryptoAssets.map(a=>COINGECKO_IDS[a.symbol]).filter(Boolean).join(",");
+      let cryptoResults = [];
+      if (cgIds) {
+        const cgRes  = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`);
+        const cgData = await cgRes.json();
+        cryptoResults = cryptoAssets.map(a => {
+          const id   = COINGECKO_IDS[a.symbol];
+          const data = cgData[id];
+          if (!data) return null;
+          const price  = data.usd;
+          const pct    = data.usd_24h_change || 0;
+          const change = price / (1 + pct/100) * (pct/100);
+          return { ...a, price, change, changePercent: pct };
+        });
+      }
+
+      const allResults = [...stockResults, ...cryptoResults].filter(Boolean);
+      if (allResults.length === 0) { setPriceStatus("error"); return; }
+
+      setAssets(prev => prev.map(a => {
+        const updated = allResults.find(r=>r.symbol===a.symbol);
+        return updated ? { ...a, ...updated } : a;
+      }));
+
+      // Also update KNOWN_ASSETS prices in memory for the add modal
+      allResults.forEach(r => {
+        const ka = KNOWN_ASSETS.find(k=>k.symbol===r.symbol);
+        if (ka) ka.price = r.price;
+      });
+
+      setPriceStatus("live");
+      setLastUpdated(new Date());
+      setTicker(t=>t+1);
+    } catch(e) {
+      console.error("Price fetch error:", e);
+      setPriceStatus("error");
+    }
+  }, [assets]);
+
+  // Fetch on mount and every 60 seconds
+  useEffect(() => {
+    fetchPrices();
+    const id = setInterval(fetchPrices, 60000);
     return () => clearInterval(id);
   }, []);
 
@@ -362,6 +428,9 @@ function App() {
                   fontSize:10, cursor:"pointer", fontFamily:"'DM Mono',monospace", letterSpacing:0.5 }}>
                   {currencyCode} ▾
                 </button>
+                <button onClick={fetchPrices} title="Refresh prices" style={{ background:"#1a2a3a",
+                  border:"1px solid #2a3a4a", color:"#60a5fa", borderRadius:6, padding:"2px 7px",
+                  fontSize:12, cursor:"pointer" }}>⟳</button>
               </div>
               {showCurrencyPicker && (
                 <div style={{ position:"absolute", top:72, left:24, zIndex:200, background:"#111822",
@@ -379,7 +448,12 @@ function App() {
               )}
             </div>
             <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:11, color:"#4a6080" }}>Portfolio Value</div>
+              <div style={{ fontSize:11, color:"#4a6080", display:"flex", alignItems:"center", justifyContent:"flex-end", gap:5 }}>
+                <span style={{ width:6, height:6, borderRadius:"50%", display:"inline-block",
+                  background: priceStatus==="live"?"#22c55e": priceStatus==="error"?"#ef4444":"#f59e0b",
+                  boxShadow: priceStatus==="live"?"0 0 4px #22c55e":"none" }} />
+                {priceStatus==="live" ? "Live" : priceStatus==="error" ? "Offline" : "Loading..."}
+              </div>
               <div style={{ fontSize:18, fontWeight:500, color:"#e2f0ff" }}>
                 {hasAnyHoldings ? fmt(totalValue) : "—"}
               </div>
@@ -388,6 +462,11 @@ function App() {
                   ? `${totalChange>=0?"▲":"▼"} ${Math.abs(totalChangePct).toFixed(2)}% today`
                   : "Enter holdings below"}
               </div>
+              {lastUpdated && (
+                <div style={{ fontSize:10, color:"#2a3a4a", marginTop:2 }}>
+                  Updated {lastUpdated.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}
+                </div>
+              )}
             </div>
           </div>
         </div>
