@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Holdingo</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #080c14; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+    select option { background: #0d1117; color: #e2f0ff; }
+    @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes alertPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.01); } }
+    button:hover { opacity: 0.85; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1a2a3a; border-radius: 10px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const STOCKS = [
+  { symbol: "ASML", name: "ASML Holding N.V.", price: 742.18, change: 8.43, changePercent: 1.15, type: "stock" },
+  { symbol: "DIS",  name: "The Walt Disney Co.", price: 111.52, change: -1.07, changePercent: -0.95, type: "stock" },
+];
+const CRYPTOS = [
+  { symbol: "LINK", name: "Chainlink", price: 14.82, change: 0.43, changePercent: 2.99, type: "crypto" },
+];
+const KNOWN_ASSETS = [
+  { symbol: "AAPL",  name: "Apple Inc.",            price: 227.52,  type: "stock"  },
+  { symbol: "TSLA",  name: "Tesla Inc.",             price: 248.71,  type: "stock"  },
+  { symbol: "MSFT",  name: "Microsoft Corp.",        price: 415.30,  type: "stock"  },
+  { symbol: "NVDA",  name: "NVIDIA Corp.",           price: 875.40,  type: "stock"  },
+  { symbol: "AMZN",  name: "Amazon.com Inc.",        price: 198.12,  type: "stock"  },
+  { symbol: "GOOGL", name: "Alphabet Inc.",          price: 175.84,  type: "stock"  },
+  { symbol: "META",  name: "Meta Platforms",         price: 512.66,  type: "stock"  },
+  { symbol: "NFLX",  name: "Netflix Inc.",           price: 634.10,  type: "stock"  },
+  { symbol: "AMD",   name: "Advanced Micro Devices", price: 164.55,  type: "stock"  },
+  { symbol: "PYPL",  name: "PayPal Holdings",        price: 68.30,   type: "stock"  },
+  { symbol: "BTC",   name: "Bitcoin",                price: 67420.00,type: "crypto" },
+  { symbol: "ETH",   name: "Ethereum",               price: 3512.88, type: "crypto" },
+  { symbol: "SOL",   name: "Solana",                 price: 182.44,  type: "crypto" },
+  { symbol: "BNB",   name: "BNB",                    price: 592.10,  type: "crypto" },
+  { symbol: "XRP",   name: "XRP",                    price: 0.524,   type: "crypto" },
+  { symbol: "DOGE",  name: "Dogecoin",               price: 0.162,   type: "crypto" },
+  { symbol: "ADA",   name: "Cardano",                price: 0.451,   type: "crypto" },
+  { symbol: "AVAX",  name: "Avalanche",              price: 37.80,   type: "crypto" },
+];
+const NEWS = [
+  { id:1, symbol:"ASML", title:"ASML Reports Record EUV Backlog Amid AI Chip Surge",
+    summary:"ASML's extreme ultraviolet lithography machines are in unprecedented demand as chipmakers race to build AI-capable fabs. The company's order book has swelled to record highs, with delivery slots booked well into 2027.",
+    advice:"Highly bullish. ASML holds a global monopoly on EUV machines — no competitor can replicate this technology. Long-term holders should remain confident. Short-term dips are buying opportunities.",
+    time:"1h ago", sentiment:"positive" },
+  { id:2, symbol:"DIS", title:"Disney+ Subscriber Growth Beats Estimates in Q2",
+    summary:"Walt Disney reported stronger-than-expected Disney+ subscriber additions, driven by password-sharing crackdowns and new content releases. The parks division also posted record revenue.",
+    advice:"Cautiously bullish. Streaming profitability is improving and parks remain a cash cow. However, cord-cutting headwinds in the linear TV segment persist. A solid hold for patient investors.",
+    time:"3h ago", sentiment:"positive" },
+  { id:3, symbol:"LINK", title:"Chainlink Expands Real-World Asset Oracle Network",
+    summary:"Chainlink announced new partnerships with major financial institutions to bring real-world asset data on-chain, positioning LINK as the backbone of tokenized finance infrastructure.",
+    advice:"Bullish long-term. Chainlink's oracle network is becoming critical infrastructure for DeFi and tokenized assets. Increased institutional adoption is a strong catalyst. Watch for broader crypto market correlation risk.",
+    time:"5h ago", sentiment:"positive" },
+  { id:4, symbol:"DIS", title:"ESPN Standalone Streaming Launch Set for Late 2025",
+    summary:"Disney confirmed its standalone ESPN streaming service will launch later this year, targeting sports fans who have cut the cable cord. Pricing and bundling details were revealed at an investor day presentation.",
+    advice:"Positive catalyst. ESPN streaming could unlock a large addressable market. Success depends on pricing strategy and rights retention. Monitor subscriber uptake closely at launch.",
+    time:"7h ago", sentiment:"positive" },
+  { id:5, symbol:"ASML", title:"US Export Controls Could Limit ASML China Sales",
+    summary:"New US semiconductor export regulations may further restrict ASML's ability to service and ship equipment to Chinese chipmakers, potentially impacting a meaningful portion of its revenue.",
+    advice:"Short-term headwind. China has historically represented a notable portion of ASML's sales. However, demand from TSMC, Samsung, and Intel more than offsets any China exposure loss. Hold and monitor policy developments.",
+    time:"9h ago", sentiment:"neutral" },
+  { id:6, symbol:"LINK", title:"LINK Surges as DeFi TVL Hits 2-Year High",
+    summary:"Total value locked in decentralized finance protocols climbed to its highest level in two years, boosting demand for Chainlink's oracle services which underpin the majority of leading DeFi platforms.",
+    advice:"Bullish. Rising DeFi activity directly increases Chainlink's utility and fee revenue. If TVL growth continues, LINK is well positioned for further gains. Consider a gradual accumulation strategy.",
+    time:"11h ago", sentiment:"positive" },
+];
+const INIT_ALERTS = [
+  { id:1, symbol:"ASML", condition:"above", target:760,  active:true  },
+  { id:2, symbol:"DIS",  condition:"below", target:108,  active:true  },
+  { id:3, symbol:"LINK", condition:"above", target:16,   active:false },
+];
+const CURRENCIES = [
+  { code:"USD", symbol:"$",   rate:1     },
+  { code:"EUR", symbol:"€",   rate:0.92  },
+  { code:"GBP", symbol:"£",   rate:0.79  },
+  { code:"JPY", symbol:"¥",   rate:149.5 },
+  { code:"CAD", symbol:"CA$", rate:1.36  },
+  { code:"AUD", symbol:"A$",  rate:1.53  },
+  { code:"CHF", symbol:"Fr",  rate:0.90  },
+  { code:"INR", symbol:"₹",   rate:83.1  },
+];
+const sentimentColor = { positive:"#22c55e", negative:"#ef4444", neutral:"#f59e0b" };
+const sentimentBg    = { positive:"#052e16", negative:"#450a0a", neutral:"#431407" };
+
+const makeFmt = (currency) => (n, crypto=false) => {
+  const v = n * currency.rate;
+  const s = currency.symbol;
+  return (crypto && v > 1000)
+    ? s + v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
+    : s + v.toFixed(2);
+};
+
+function AssetCard({ asset, onRemove, holding, onHoldingChange, fmt }) {
+  const up = asset.change >= 0;
+  const qty = parseFloat(holding) || 0;
+  const holdingValue  = qty > 0 ? asset.price * qty : null;
+  const holdingChange = qty > 0 ? asset.change * qty : null;
+  const isCrypto = asset.type === "crypto";
+  return (
+    <div style={{ background:"#111822", border:"1px solid #1a2332", borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:38, height:38, borderRadius:10, background:up?"#052e16":"#450a0a",
+            border:`1px solid ${up?"#22c55e33":"#ef444433"}`, display:"flex", alignItems:"center",
+            justifyContent:"center", fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:800,
+            color:up?"#22c55e":"#ef4444", flexShrink:0 }}>
+            {asset.symbol.slice(0,3)}
+          </div>
+          <div>
+            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:700, color:"#e2f0ff" }}>{asset.symbol}</div>
+            <div style={{ fontSize:11, color:"#4a6080" }}>{asset.name}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:14, fontWeight:500, color:"#e2f0ff" }}>{fmt(asset.price, isCrypto)}</div>
+            <div style={{ fontSize:11, color:up?"#22c55e":"#ef4444" }}>
+              {up?"▲":"▼"} {Math.abs(asset.changePercent).toFixed(2)}%
+            </div>
+          </div>
+          {onRemove && (
+            <button onClick={onRemove} style={{ background:"none", border:"1px solid #1a2332", color:"#4a6080",
+              borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:12,
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>✕</button>
+          )}
+        </div>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, borderTop:"1px solid #1a2332", paddingTop:9 }}>
+        <div style={{ fontSize:11, color:"#4a6080", flexShrink:0 }}>
+          {isCrypto ? "Units owned:" : "Shares owned:"}
+        </div>
+        <input type="number" min="0" value={holding} onChange={e=>onHoldingChange(e.target.value)}
+          placeholder="0" style={{ width:90, background:"#0d1117", border:"1px solid #1a2a3a",
+            color:"#e2f0ff", borderRadius:6, padding:"4px 8px", fontSize:12, textAlign:"right" }} />
+        {holdingValue !== null ? (
+          <div style={{ marginLeft:"auto", textAlign:"right" }}>
+            <div style={{ fontSize:13, fontWeight:500, color:"#e2f0ff" }}>{fmt(holdingValue)}</div>
+            <div style={{ fontSize:11, color:up?"#22c55e":"#ef4444" }}>
+              {holdingChange >= 0 ? "+" : ""}{fmt(holdingChange)} today
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginLeft:"auto", fontSize:11, color:"#2a3a4a" }}>Enter quantity to see value</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab]                   = useState("portfolio");
+  const [assets, setAssets]             = useState([...STOCKS, ...CRYPTOS]);
+  const [alerts, setAlerts]             = useState(INIT_ALERTS);
+  const [notification, setNotification] = useState(null);
+  const [addAlertModal, setAddAlertModal]   = useState(false);
+  const [newAlert, setNewAlert]             = useState({ symbol:"ASML", target:"" });
+  const [selectedNews, setSelectedNews]     = useState(null);
+  const [ticker, setTicker]                 = useState(0);
+  const [addAssetModal, setAddAssetModal]   = useState(false);
+  const [assetSearch, setAssetSearch]       = useState("");
+  const [confirmRemove, setConfirmRemove]   = useState(null);
+  const [editAlert, setEditAlert]           = useState(null);
+  const [dragAlert, setDragAlert]           = useState(null);
+  const [holdings, setHoldings]             = useState({ ASML:"", DIS:"", LINK:"" });
+  const [currencyCode, setCurrencyCode]     = useState("CAD");
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+
+  const soundLoopRef = useRef(null);
+  const currency = CURRENCIES.find(c => c.code === currencyCode);
+  const fmt = makeFmt(currency);
+
+  // Live price simulation
+  useEffect(() => {
+    const id = setInterval(() => {
+      setAssets(prev => prev.map(a => {
+        const delta = (Math.random()-0.49)*(a.type==="crypto"?a.price*0.003:a.price*0.001);
+        const newPrice = Math.max(a.price+delta, 0.01);
+        const newChange = a.change+delta;
+        const newPct = (newChange/(newPrice-newChange))*100;
+        return { ...a, price:newPrice, change:newChange, changePercent:newPct };
+      }));
+      setTicker(t => t+1);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  const playDing = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const note = (freq, t, dur) => {
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type="sine"; o.frequency.setValueAtTime(freq,t);
+        g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+        o.start(t); o.stop(t+dur);
+      };
+      note(880,  ctx.currentTime,      0.3);
+      note(1100, ctx.currentTime+0.15, 0.3);
+      note(1320, ctx.currentTime+0.3,  0.5);
+    } catch(e){}
+  },[]);
+
+  const playBuzzer = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const buzz = (t) => {
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type="sawtooth"; o.frequency.setValueAtTime(220,t);
+        o.frequency.linearRampToValueAtTime(80,t+0.4);
+        g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+        o.start(t); o.stop(t+0.5);
+      };
+      buzz(ctx.currentTime); buzz(ctx.currentTime+0.55);
+    } catch(e){}
+  },[]);
+
+  const startSoundLoop = useCallback((type) => {
+    if (soundLoopRef.current) clearInterval(soundLoopRef.current);
+    const fn = type==="above" ? playDing : playBuzzer;
+    fn();
+    soundLoopRef.current = setInterval(fn, 2500);
+  },[playDing, playBuzzer]);
+
+  const stopSoundLoop = useCallback(() => {
+    if (soundLoopRef.current) { clearInterval(soundLoopRef.current); soundLoopRef.current=null; }
+  },[]);
+
+  const dismissNotification = useCallback(() => {
+    stopSoundLoop(); setNotification(null);
+  },[stopSoundLoop]);
+
+  // Check alerts
+  useEffect(() => {
+    alerts.forEach(alert => {
+      if (!alert.active) return;
+      const asset = assets.find(a => a.symbol===alert.symbol);
+      if (!asset) return;
+      const triggered = (alert.condition==="above" && asset.price>=alert.target)
+                     || (alert.condition==="below" && asset.price<=alert.target);
+      if (triggered) {
+        setNotification(prev => {
+          if (prev?.symbol===alert.symbol && prev?.condition===alert.condition) return prev;
+          startSoundLoop(alert.condition);
+          return {
+            symbol: alert.symbol, condition: alert.condition,
+            message: `${alert.symbol} ${alert.condition==="above"?"reached":"dropped to"} ${fmt(alert.target, asset.type==="crypto")}`,
+            price: fmt(asset.price, asset.type==="crypto"),
+          };
+        });
+      }
+    });
+  }, [ticker]);
+
+  // Portfolio totals
+  const totalValue  = assets.reduce((s,a)=>{ const q=parseFloat(holdings[a.symbol])||0; return s+(q>0?a.price*q:0); },0);
+  const totalChange = assets.reduce((s,a)=>{ const q=parseFloat(holdings[a.symbol])||0; return s+(q>0?a.change*q:0); },0);
+  const totalChangePct = totalValue-totalChange>0 ? (totalChange/(totalValue-totalChange))*100 : 0;
+  const hasAnyHoldings = assets.some(a => parseFloat(holdings[a.symbol])>0);
+
+  // Alert helpers
+  const removeAlert  = id => setAlerts(prev=>prev.filter(a=>a.id!==id));
+  const toggleAlert  = id => setAlerts(prev=>prev.map(a=>a.id===id?{...a,active:!a.active}:a));
+  const reorderAlerts = (fromId, toId) => {
+    if (fromId===toId) return;
+    setAlerts(prev=>{
+      const arr=[...prev];
+      const fi=arr.findIndex(a=>a.id===fromId), ti=arr.findIndex(a=>a.id===toId);
+      const [item]=arr.splice(fi,1); arr.splice(ti,0,item); return arr;
+    });
+  };
+  const updateAlertTarget = () => {
+    if (!editAlert||!editAlert.target) return;
+    const target=parseFloat(editAlert.target);
+    setAlerts(prev=>prev.map(a=>{
+      if (a.id!==editAlert.id) return a;
+      const asset=assets.find(x=>x.symbol===a.symbol);
+      return { ...a, target, condition: asset&&target>=asset.price?"above":"below" };
+    }));
+    setEditAlert(null);
+  };
+  const addAlert = () => {
+    if (!newAlert.target) return;
+    const target=parseFloat(newAlert.target);
+    const asset=assets.find(a=>a.symbol===newAlert.symbol);
+    const condition=asset&&target>=asset.price?"above":"below";
+    setAlerts(prev=>[...prev,{...newAlert,id:Date.now(),target,condition,active:true}]);
+    setAddAlertModal(false);
+    setNewAlert({ symbol:assets[0]?.symbol||"ASML", target:"" });
+  };
+
+  // Asset helpers
+  const addAsset = known => {
+    if (assets.find(a=>a.symbol===known.symbol)) return;
+    setAssets(prev=>[...prev,{...known,change:0,changePercent:0}]);
+    setAddAssetModal(false); setAssetSearch("");
+  };
+  const removeAsset = symbol => {
+    setAssets(prev=>prev.filter(a=>a.symbol!==symbol));
+    setAlerts(prev=>prev.filter(a=>a.symbol!==symbol));
+    setConfirmRemove(null);
+  };
+
+  const filteredKnown = KNOWN_ASSETS.filter(k =>
+    !assets.find(a=>a.symbol===k.symbol) &&
+    (k.symbol.toLowerCase().includes(assetSearch.toLowerCase()) ||
+     k.name.toLowerCase().includes(assetSearch.toLowerCase()))
+  );
+  const allSymbols = assets.map(a=>a.symbol);
+
+  return (
+    <div style={{ fontFamily:"'DM Mono','Courier New',monospace", background:"#080c14",
+      minHeight:"100vh", display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"20px 0" }}>
+
+      {/* Phone shell */}
+      <div style={{ width:390, minHeight:780, background:"#0d1117", borderRadius:44, overflow:"hidden",
+        boxShadow:"0 0 0 1px #1e2a3a, 0 40px 120px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
+        position:"relative", display:"flex", flexDirection:"column" }}>
+
+        {/* Status bar */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+          padding:"14px 28px 0", color:"#fff", fontSize:12, fontWeight:500 }}>
+          <span>9:41</span>
+          <div style={{ width:120, height:30, background:"#0d1117", borderRadius:20,
+            position:"absolute", left:"50%", transform:"translateX(-50%)", top:0 }} />
+          <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+            <span>●●●</span><span>WiFi</span><span>🔋</span>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div style={{ padding:"16px 24px 12px", borderBottom:"1px solid #1a2332", position:"relative" }}>
+          {showCurrencyPicker && (
+            <div onClick={()=>setShowCurrencyPicker(false)}
+              style={{ position:"fixed", inset:0, zIndex:199 }} />
+          )}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:22, fontWeight:800, color:"#e2f0ff", letterSpacing:-0.5 }}>
+                HOL<span style={{ color:"#3b82f6" }}>DINGO</span>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:4 }}>
+                <button onClick={()=>setShowCurrencyPicker(p=>!p)} style={{ background:"#1a2a3a",
+                  border:"1px solid #2a3a4a", color:"#60a5fa", borderRadius:6, padding:"2px 7px",
+                  fontSize:10, cursor:"pointer", fontFamily:"'DM Mono',monospace", letterSpacing:0.5 }}>
+                  {currencyCode} ▾
+                </button>
+              </div>
+              {showCurrencyPicker && (
+                <div style={{ position:"absolute", top:72, left:24, zIndex:200, background:"#111822",
+                  border:"1px solid #1a2a3a", borderRadius:12, padding:8,
+                  display:"flex", flexDirection:"column", gap:2, boxShadow:"0 8px 32px rgba(0,0,0,0.6)" }}>
+                  {CURRENCIES.map(c=>(
+                    <button key={c.code} onClick={()=>{ setCurrencyCode(c.code); setShowCurrencyPicker(false); }}
+                      style={{ background:c.code===currencyCode?"#1a3a6a":"none", border:"none", borderRadius:8,
+                        padding:"6px 14px", color:c.code===currencyCode?"#60a5fa":"#94a3b8",
+                        cursor:"pointer", fontSize:12, textAlign:"left", fontFamily:"'DM Mono',monospace" }}>
+                      <span style={{ color:"#4a6080", marginRight:6 }}>{c.symbol}</span>{c.code}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:11, color:"#4a6080" }}>Portfolio Value</div>
+              <div style={{ fontSize:18, fontWeight:500, color:"#e2f0ff" }}>
+                {hasAnyHoldings ? fmt(totalValue) : "—"}
+              </div>
+              <div style={{ fontSize:12, color:hasAnyHoldings?(totalChange>=0?"#22c55e":"#ef4444"):"#4a6080" }}>
+                {hasAnyHoldings
+                  ? `${totalChange>=0?"▲":"▼"} ${Math.abs(totalChangePct).toFixed(2)}% today`
+                  : "Enter holdings below"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification banner */}
+        {notification && (
+          <div onClick={dismissNotification} style={{
+            margin:"8px 16px 0",
+            background:notification.condition==="above"
+              ?"linear-gradient(135deg,#0a2a1a,#0d2010)"
+              :"linear-gradient(135deg,#2a0a0a,#1a0808)",
+            border:`1px solid ${notification.condition==="above"?"#22c55e88":"#ef444488"}`,
+            borderRadius:12, padding:"12px 14px", display:"flex", alignItems:"center",
+            justifyContent:"space-between", gap:10, cursor:"pointer",
+            animation:"alertPulse 1s ease-in-out infinite" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{ fontSize:22 }}>{notification.condition==="above"?"📈":"📉"}</div>
+              <div>
+                <div style={{ fontSize:12, fontWeight:500, color:notification.condition==="above"?"#22c55e":"#ef4444" }}>
+                  {notification.condition==="above"?"▲ Price Target Reached!":"▼ Price Dropped to Target!"}
+                </div>
+                <div style={{ fontSize:11, color:notification.condition==="above"?"#86efac":"#fca5a5", marginTop:2 }}>
+                  {notification.message} — Now {notification.price}
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize:11, color:"#4a6080", flexShrink:0, border:"1px solid #2a3a4a", borderRadius:6, padding:"3px 8px" }}>
+              Tap to dismiss
+            </div>
+          </div>
+        )}
+
+        {/* Tab bar */}
+        <div style={{ display:"flex", borderBottom:"1px solid #1a2332", margin:"8px 0 0" }}>
+          {[{key:"portfolio",label:"Portfolio",icon:"📈"},{key:"alerts",label:"Alerts",icon:"🔔"},{key:"news",label:"News",icon:"📰"}].map(t=>(
+            <button key={t.key} onClick={()=>setTab(t.key)} style={{
+              flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 4px",
+              color:tab===t.key?"#3b82f6":"#4a6080", fontSize:11,
+              borderBottom:tab===t.key?"2px solid #3b82f6":"2px solid transparent", transition:"all 0.2s" }}>
+              <div style={{ fontSize:16 }}>{t.icon}</div>
+              <div style={{ marginTop:2, fontWeight:tab===t.key?500:400 }}>{t.label}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{ flex:1, overflowY:"auto", padding:"12px 16px 80px" }}>
+
+          {/* ── PORTFOLIO ── */}
+          {tab==="portfolio" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                <div style={{ fontSize:11, color:"#4a6080", letterSpacing:1 }}>STOCKS</div>
+                <button onClick={()=>{ setAddAssetModal("stock"); setAssetSearch(""); }}
+                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6",
+                    borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Stock</button>
+              </div>
+              {assets.filter(a=>a.type==="stock").map(a=>(
+                <AssetCard key={a.symbol} asset={a} fmt={fmt}
+                  onRemove={()=>setConfirmRemove(a)}
+                  holding={holdings[a.symbol]||""}
+                  onHoldingChange={val=>setHoldings(h=>({...h,[a.symbol]:val}))} />
+              ))}
+              {assets.filter(a=>a.type==="stock").length===0 && (
+                <div style={{ fontSize:12, color:"#4a6080", textAlign:"center", padding:"16px 0" }}>No stocks added yet</div>
+              )}
+
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"16px 0 10px" }}>
+                <div style={{ fontSize:11, color:"#4a6080", letterSpacing:1 }}>CRYPTO</div>
+                <button onClick={()=>{ setAddAssetModal("crypto"); setAssetSearch(""); }}
+                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6",
+                    borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Crypto</button>
+              </div>
+              {assets.filter(a=>a.type==="crypto").map(a=>(
+                <AssetCard key={a.symbol} asset={a} fmt={fmt}
+                  onRemove={()=>setConfirmRemove(a)}
+                  holding={holdings[a.symbol]||""}
+                  onHoldingChange={val=>setHoldings(h=>({...h,[a.symbol]:val}))} />
+              ))}
+              {assets.filter(a=>a.type==="crypto").length===0 && (
+                <div style={{ fontSize:12, color:"#4a6080", textAlign:"center", padding:"16px 0" }}>No crypto added yet</div>
+              )}
+
+              {/* Add Asset Modal */}
+              {addAssetModal && (
+                <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
+                  display:"flex", alignItems:"flex-end", zIndex:100 }}>
+                  <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%",
+                    border:"1px solid #1a2a3a", maxHeight:"70vh", display:"flex", flexDirection:"column", boxSizing:"border-box" }}>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:12 }}>
+                      Add {addAssetModal==="stock"?"Stock":"Cryptocurrency"}
+                    </div>
+                    <input value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} autoFocus
+                      placeholder={`Search ${addAssetModal==="stock"?"stocks":"crypto"}...`}
+                      style={{ width:"100%", background:"#0d1117", border:"1px solid #1a2a3a", color:"#e2f0ff",
+                        borderRadius:8, padding:"8px 12px", fontSize:13, marginBottom:12, boxSizing:"border-box" }} />
+                    <div style={{ overflowY:"auto", flex:1 }}>
+                      {filteredKnown.filter(k=>k.type===addAssetModal).map(k=>(
+                        <button key={k.symbol} onClick={()=>addAsset(k)} style={{
+                          width:"100%", background:"#0d1117", border:"1px solid #1a2a3a",
+                          borderRadius:10, padding:"10px 14px", marginBottom:8, cursor:"pointer",
+                          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                          <div style={{ textAlign:"left" }}>
+                            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:13, fontWeight:700, color:"#e2f0ff" }}>{k.symbol}</div>
+                            <div style={{ fontSize:11, color:"#4a6080" }}>{k.name}</div>
+                          </div>
+                          <div style={{ fontSize:13, color:"#60a5fa" }}>{fmt(k.price, k.type==="crypto")}</div>
+                        </button>
+                      ))}
+                      {filteredKnown.filter(k=>k.type===addAssetModal).length===0 && (
+                        <div style={{ fontSize:12, color:"#4a6080", textAlign:"center", padding:16 }}>No results found</div>
+                      )}
+                    </div>
+                    <button onClick={()=>setAddAssetModal(false)}
+                      style={{ marginTop:12, background:"#1a2332", border:"none", color:"#94a3b8",
+                        borderRadius:10, padding:12, cursor:"pointer", fontSize:13, width:"100%" }}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Confirm Remove */}
+              {confirmRemove && (
+                <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
+                  display:"flex", alignItems:"center", justifyContent:"center", zIndex:100, padding:24 }}>
+                  <div style={{ background:"#111822", borderRadius:20, padding:24, width:"100%",
+                    border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:8 }}>
+                      Remove {confirmRemove.symbol}?
+                    </div>
+                    <div style={{ fontSize:13, color:"#94a3b8", marginBottom:20, lineHeight:1.5 }}>
+                      This will remove <span style={{ color:"#e2f0ff" }}>{confirmRemove.name}</span> from your portfolio and delete any associated alerts.
+                    </div>
+                    <div style={{ display:"flex", gap:10 }}>
+                      <button onClick={()=>setConfirmRemove(null)}
+                        style={{ flex:1, background:"#1a2332", border:"none", color:"#94a3b8", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Cancel</button>
+                      <button onClick={()=>removeAsset(confirmRemove.symbol)}
+                        style={{ flex:1, background:"#450a0a", border:"1px solid #ef444444", color:"#ef4444", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Remove</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── ALERTS ── */}
+          {tab==="alerts" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <div style={{ fontSize:11, color:"#4a6080", letterSpacing:1 }}>PRICE ALERTS</div>
+                <button onClick={()=>setAddAlertModal(true)}
+                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6",
+                    borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Alert</button>
+              </div>
+
+              {alerts.map(alert => {
+                const asset = assets.find(a=>a.symbol===alert.symbol);
+                const price = asset?.price||0;
+                const diff  = ((price-alert.target)/alert.target*100).toFixed(1);
+                const isDragging = dragAlert?.id===alert.id;
+                const isOver     = dragAlert?.overId===alert.id && dragAlert?.id!==alert.id;
+                return (
+                  <div key={alert.id} draggable
+                    onDragStart={()=>setDragAlert({id:alert.id,overId:alert.id})}
+                    onDragOver={e=>{ e.preventDefault(); setDragAlert(d=>d?{...d,overId:alert.id}:d); }}
+                    onDragEnd={()=>{ if(dragAlert){reorderAlerts(dragAlert.id,dragAlert.overId);setDragAlert(null);} }}
+                    style={{ background:"#111822", border:`1px solid ${isOver?"#3b82f6":"#1a2a3a"}`,
+                      borderRadius:12, padding:"12px 14px", marginBottom:10,
+                      opacity:isDragging?0.4:alert.active?1:0.5, cursor:"grab",
+                      transform:isOver?"scale(1.01)":"scale(1)",
+                      transition:"border-color 0.15s,transform 0.15s,opacity 0.15s", userSelect:"none" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                      <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                        <div style={{ color:"#2a3a4a", fontSize:16, paddingTop:2, cursor:"grab" }}>⠿</div>
+                        <div>
+                          <span style={{ fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:700, color:"#e2f0ff" }}>{alert.symbol}</span>
+                          <span style={{ fontSize:11, color:"#4a6080", marginLeft:8 }}>
+                            {alert.condition==="above"?"▲ rises above":"▼ drops below"} {fmt(alert.target, asset?.type==="crypto")}
+                          </span>
+                          <div style={{ fontSize:11, color:"#4a6080", marginTop:4 }}>
+                            Current: <span style={{ color:"#94a3b8" }}>{asset?fmt(price,asset.type==="crypto"):"—"}</span>
+                            <span style={{ marginLeft:8, color:parseFloat(diff)>=0?"#22c55e":"#ef4444" }}>
+                              {parseFloat(diff)>=0?"+":""}{diff}% away
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                        <button onClick={()=>toggleAlert(alert.id)} style={{
+                          background:alert.active?"#052e16":"#1a2332",
+                          border:`1px solid ${alert.active?"#22c55e44":"#1a2332"}`,
+                          borderRadius:6, padding:"3px 8px", fontSize:10,
+                          color:alert.active?"#22c55e":"#4a6080", cursor:"pointer" }}>
+                          {alert.active?"ON":"OFF"}
+                        </button>
+                        <button onClick={()=>setEditAlert({id:alert.id,target:String(alert.target)})}
+                          style={{ background:"none", border:"1px solid #1a2a3a", color:"#60a5fa", cursor:"pointer",
+                            fontSize:12, borderRadius:6, width:26, height:26, display:"flex",
+                            alignItems:"center", justifyContent:"center" }}>✏️</button>
+                        <button onClick={()=>removeAlert(alert.id)}
+                          style={{ background:"none", border:"none", color:"#4a6080", cursor:"pointer", fontSize:14 }}>✕</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add Alert Modal */}
+              {addAlertModal && (()=>{
+                const selAsset   = assets.find(a=>a.symbol===newAlert.symbol);
+                const target     = parseFloat(newAlert.target);
+                const hasTarget  = newAlert.target!==""&&!isNaN(target);
+                const autoCond   = hasTarget&&selAsset ? (target>=selAsset.price?"above":"below") : null;
+                return (
+                  <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
+                    display:"flex", alignItems:"flex-end", zIndex:100 }}>
+                    <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%",
+                      border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
+                      <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:16 }}>New Price Alert</div>
+                      <div style={{ marginBottom:12 }}>
+                        <div style={{ fontSize:11, color:"#4a6080", marginBottom:6 }}>ASSET</div>
+                        <select value={newAlert.symbol} onChange={e=>setNewAlert(p=>({...p,symbol:e.target.value}))}
+                          style={{ width:"100%", background:"#0d1117", border:"1px solid #1a2a3a",
+                            color:"#e2f0ff", borderRadius:8, padding:"8px 12px", fontSize:13 }}>
+                          {allSymbols.map(s=><option key={s} value={s}>{s}</option>)}
+                        </select>
+                        {selAsset && (
+                          <div style={{ fontSize:11, color:"#4a6080", marginTop:5 }}>
+                            Current price: <span style={{ color:"#94a3b8" }}>{fmt(selAsset.price,selAsset.type==="crypto")}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ marginBottom:16 }}>
+                        <div style={{ fontSize:11, color:"#4a6080", marginBottom:6 }}>TARGET PRICE</div>
+                        <input type="number" value={newAlert.target}
+                          onChange={e=>setNewAlert(p=>({...p,target:e.target.value}))}
+                          placeholder={selAsset?`e.g. ${(selAsset.price*1.05).toFixed(2)}`:"Enter price"}
+                          style={{ width:"100%", background:"#0d1117", boxSizing:"border-box",
+                            border:`1px solid ${autoCond?(autoCond==="above"?"#22c55e55":"#ef444455"):"#1a2a3a"}`,
+                            color:"#e2f0ff", borderRadius:8, padding:"8px 12px", fontSize:13 }} />
+                        <div style={{ marginTop:8, minHeight:28, display:"flex", alignItems:"center" }}>
+                          {autoCond ? (
+                            <div style={{ display:"inline-flex", alignItems:"center", gap:6,
+                              background:autoCond==="above"?"#052e16":"#450a0a",
+                              border:`1px solid ${autoCond==="above"?"#22c55e44":"#ef444444"}`,
+                              borderRadius:8, padding:"4px 10px", fontSize:12,
+                              color:autoCond==="above"?"#22c55e":"#ef4444" }}>
+                              {autoCond==="above"?"▲":"▼"} Alert when {newAlert.symbol} {autoCond==="above"?"reaches or exceeds":"drops to or below"} {fmt(target, selAsset?.type==="crypto")}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize:11, color:"#4a6080" }}>Enter a target price to see the alert condition</div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:10 }}>
+                        <button onClick={()=>setAddAlertModal(false)}
+                          style={{ flex:1, background:"#1a2332", border:"none", color:"#94a3b8", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Cancel</button>
+                        <button onClick={addAlert} disabled={!hasTarget}
+                          style={{ flex:2, background:hasTarget?"#1a3a6a":"#111",
+                            border:`1px solid ${hasTarget?"#3b82f6":"#1a2a3a"}`,
+                            color:hasTarget?"#60a5fa":"#333", borderRadius:10, padding:12,
+                            cursor:hasTarget?"pointer":"default", fontSize:13, fontWeight:500 }}>Set Alert</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Edit Alert Modal */}
+              {editAlert && (()=>{
+                const alert    = alerts.find(a=>a.id===editAlert.id);
+                const asset    = assets.find(a=>a.symbol===alert?.symbol);
+                const target   = parseFloat(editAlert.target);
+                const hasTarget= editAlert.target!==""&&!isNaN(target);
+                const autoCond = hasTarget&&asset?(target>=asset.price?"above":"below"):null;
+                return (
+                  <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
+                    display:"flex", alignItems:"flex-end", zIndex:100 }}>
+                    <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%",
+                      border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
+                      <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:4 }}>Edit Alert</div>
+                      <div style={{ fontSize:12, color:"#4a6080", marginBottom:16 }}>{alert?.symbol}</div>
+                      <div style={{ marginBottom:8 }}>
+                        <div style={{ fontSize:11, color:"#4a6080", marginBottom:6 }}>NEW TARGET PRICE</div>
+                        <input type="number" value={editAlert.target} autoFocus
+                          onChange={e=>setEditAlert(p=>({...p,target:e.target.value}))}
+                          placeholder={String(alert?.target)}
+                          style={{ width:"100%", background:"#0d1117", boxSizing:"border-box",
+                            border:`1px solid ${autoCond?(autoCond==="above"?"#22c55e55":"#ef444455"):"#3b82f6"}`,
+                            color:"#e2f0ff", borderRadius:8, padding:"10px 12px", fontSize:15 }} />
+                        {asset && (
+                          <div style={{ fontSize:11, color:"#4a6080", marginTop:6 }}>
+                            Current price: <span style={{ color:"#94a3b8" }}>{fmt(asset.price,asset.type==="crypto")}</span>
+                          </div>
+                        )}
+                        <div style={{ marginTop:8, minHeight:28, display:"flex", alignItems:"center" }}>
+                          {autoCond ? (
+                            <div style={{ display:"inline-flex", alignItems:"center", gap:6,
+                              background:autoCond==="above"?"#052e16":"#450a0a",
+                              border:`1px solid ${autoCond==="above"?"#22c55e44":"#ef444444"}`,
+                              borderRadius:8, padding:"4px 10px", fontSize:12,
+                              color:autoCond==="above"?"#22c55e":"#ef4444" }}>
+                              {autoCond==="above"?"▲":"▼"} Alert when {alert?.symbol} {autoCond==="above"?"reaches or exceeds":"drops to or below"} {fmt(target,asset?.type==="crypto")}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize:11, color:"#4a6080" }}>Enter a new target to preview the condition</div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:10, marginTop:12 }}>
+                        <button onClick={()=>setEditAlert(null)}
+                          style={{ flex:1, background:"#1a2332", border:"none", color:"#94a3b8", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Cancel</button>
+                        <button onClick={updateAlertTarget} disabled={!hasTarget}
+                          style={{ flex:2, background:hasTarget?"#1a3a6a":"#111",
+                            border:`1px solid ${hasTarget?"#3b82f6":"#1a2a3a"}`,
+                            color:hasTarget?"#60a5fa":"#333", borderRadius:10, padding:12,
+                            cursor:hasTarget?"pointer":"default", fontSize:13, fontWeight:500 }}>Save Target</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* ── NEWS ── */}
+          {tab==="news" && (
+            <div>
+              {selectedNews ? (
+                <div>
+                  <button onClick={()=>setSelectedNews(null)}
+                    style={{ background:"none", border:"none", color:"#3b82f6", cursor:"pointer", fontSize:13, marginBottom:12, padding:0 }}>← Back to News</button>
+                  <div style={{ background:"#111822", border:"1px solid #1a2a3a", borderRadius:16, padding:20 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                      <span style={{ background:"#1a2a3a", color:"#60a5fa", padding:"3px 8px", borderRadius:6, fontSize:11, fontWeight:500 }}>{selectedNews.symbol}</span>
+                      <span style={{ fontSize:11, color:"#4a6080" }}>{selectedNews.time}</span>
+                    </div>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", lineHeight:1.4, marginBottom:12 }}>{selectedNews.title}</div>
+                    <div style={{ fontSize:13, color:"#94a3b8", lineHeight:1.6, marginBottom:16 }}>{selectedNews.summary}</div>
+                    <div style={{ background:sentimentBg[selectedNews.sentiment],
+                      border:`1px solid ${sentimentColor[selectedNews.sentiment]}44`,
+                      borderRadius:12, padding:"12px 14px" }}>
+                      <div style={{ fontSize:11, color:sentimentColor[selectedNews.sentiment], marginBottom:6, fontWeight:500, letterSpacing:0.5 }}>AI ADVICE</div>
+                      <div style={{ fontSize:13, color:"#cbd5e1", lineHeight:1.5 }}>{selectedNews.advice}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize:11, color:"#4a6080", marginBottom:12, letterSpacing:1 }}>TODAY'S BRIEFING</div>
+                  {NEWS.map(n=>(
+                    <button key={n.id} onClick={()=>setSelectedNews(n)} style={{
+                      width:"100%", background:"#111822", border:"1px solid #1a2a3a",
+                      borderRadius:12, padding:"14px", marginBottom:10, cursor:"pointer", textAlign:"left" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                        <span style={{ background:"#1a2a3a", color:"#60a5fa", padding:"2px 8px", borderRadius:6, fontSize:11 }}>{n.symbol}</span>
+                        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                          <span style={{ width:6, height:6, borderRadius:"50%", background:sentimentColor[n.sentiment], display:"inline-block" }} />
+                          <span style={{ fontSize:11, color:"#4a6080" }}>{n.time}</span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize:13, fontWeight:500, color:"#cbd5e1", lineHeight:1.4, marginBottom:6 }}>{n.title}</div>
+                      <div style={{ fontSize:11, color:"#4a6080" }}>Tap for AI advice →</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom nav */}
+        <div style={{ position:"absolute", bottom:0, left:0, right:0,
+          background:"rgba(13,17,23,0.95)", backdropFilter:"blur(20px)",
+          borderTop:"1px solid #1a2332", padding:"8px 0 24px", display:"flex", justifyContent:"space-around" }}>
+          {[{key:"portfolio",icon:"📈",label:"Portfolio"},{key:"alerts",icon:"🔔",label:"Alerts"},{key:"news",icon:"📰",label:"News"}].map(t=>(
+            <button key={t.key} onClick={()=>setTab(t.key)}
+              style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column",
+                alignItems:"center", gap:2, opacity:tab===t.key?1:0.4, transition:"opacity 0.2s" }}>
+              <span style={{ fontSize:20 }}>{t.icon}</span>
+              <span style={{ fontSize:10, color:tab===t.key?"#3b82f6":"#4a6080" }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
