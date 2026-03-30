@@ -9,92 +9,94 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #080c14; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#080c14; }
     input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-    input[type=number] { -moz-appearance: textfield; }
-    select option { background: #0d1117; color: #e2f0ff; }
-    @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes alertPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.01); } }
-    button:hover { opacity: 0.85; }
-    ::-webkit-scrollbar { width: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #1a2a3a; border-radius: 10px; }
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
+    input[type=number] { -moz-appearance:textfield; }
+    select option { background:#0d1117; color:#e2f0ff; }
+    @keyframes alertPulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.85;transform:scale(1.01);} }
+    button:hover { opacity:0.85; }
+    ::-webkit-scrollbar{width:3px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:#1a2a3a;border-radius:10px;}
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
 
-const STOCKS = [
-  { symbol: "ASML", name: "ASML Holding N.V.", price: 742.18, change: 8.43, changePercent: 1.15, type: "stock" },
-  { symbol: "DIS",  name: "The Walt Disney Co.", price: 111.52, change: -1.07, changePercent: -0.95, type: "stock" },
-];
-const CRYPTOS = [
-  { symbol: "LINK", name: "Chainlink", price: 14.82, change: 0.43, changePercent: 2.99, type: "crypto" },
-];
-const FINNHUB_KEY = "d70spb1r01ql6rg0hrrgd70spb1r01ql6rg0hrs0";
+var useState    = React.useState;
+var useEffect   = React.useEffect;
+var useCallback = React.useCallback;
+var useRef      = React.useRef;
 
-// CoinGecko IDs for crypto symbols
-const COINGECKO_IDS = {
+var FINNHUB_KEY = "d70spb1r01ql6rg0hrrgd70spb1r01ql6rg0hrs0";
+
+var COINGECKO_IDS = {
   LINK:"chainlink", BTC:"bitcoin", ETH:"ethereum", SOL:"solana",
-  BNB:"binancecoin", XRP:"ripple", DOGE:"dogecoin", ADA:"cardano", AVAX:"avalanche-2",
+  BNB:"binancecoin", XRP:"ripple", DOGE:"dogecoin", ADA:"cardano", AVAX:"avalanche-2"
 };
 
-
-  { symbol: "AAPL",  name: "Apple Inc.",            price: 227.52,  type: "stock"  },
-  { symbol: "TSLA",  name: "Tesla Inc.",             price: 248.71,  type: "stock"  },
-  { symbol: "MSFT",  name: "Microsoft Corp.",        price: 415.30,  type: "stock"  },
-  { symbol: "NVDA",  name: "NVIDIA Corp.",           price: 875.40,  type: "stock"  },
-  { symbol: "AMZN",  name: "Amazon.com Inc.",        price: 198.12,  type: "stock"  },
-  { symbol: "GOOGL", name: "Alphabet Inc.",          price: 175.84,  type: "stock"  },
-  { symbol: "META",  name: "Meta Platforms",         price: 512.66,  type: "stock"  },
-  { symbol: "NFLX",  name: "Netflix Inc.",           price: 634.10,  type: "stock"  },
-  { symbol: "AMD",   name: "Advanced Micro Devices", price: 164.55,  type: "stock"  },
-  { symbol: "PYPL",  name: "PayPal Holdings",        price: 68.30,   type: "stock"  },
-  { symbol: "BTC",   name: "Bitcoin",                price: 67420.00,type: "crypto" },
-  { symbol: "ETH",   name: "Ethereum",               price: 3512.88, type: "crypto" },
-  { symbol: "SOL",   name: "Solana",                 price: 182.44,  type: "crypto" },
-  { symbol: "BNB",   name: "BNB",                    price: 592.10,  type: "crypto" },
-  { symbol: "XRP",   name: "XRP",                    price: 0.524,   type: "crypto" },
-  { symbol: "DOGE",  name: "Dogecoin",               price: 0.162,   type: "crypto" },
-  { symbol: "ADA",   name: "Cardano",                price: 0.451,   type: "crypto" },
-  { symbol: "AVAX",  name: "Avalanche",              price: 37.80,   type: "crypto" },
+var STOCKS = [
+  { symbol:"ASML", name:"ASML Holding N.V.",  price:742.18, change:8.43,  changePercent:1.15,  type:"stock" },
+  { symbol:"DIS",  name:"The Walt Disney Co.", price:111.52, change:-1.07, changePercent:-0.95, type:"stock" }
 ];
-const NEWS = [
+var CRYPTOS = [
+  { symbol:"LINK", name:"Chainlink", price:14.82, change:0.43, changePercent:2.99, type:"crypto" }
+];
+var KNOWN_ASSETS = [
+  { symbol:"AAPL",  name:"Apple Inc.",            price:227.52,   type:"stock"  },
+  { symbol:"TSLA",  name:"Tesla Inc.",             price:248.71,   type:"stock"  },
+  { symbol:"MSFT",  name:"Microsoft Corp.",        price:415.30,   type:"stock"  },
+  { symbol:"NVDA",  name:"NVIDIA Corp.",           price:875.40,   type:"stock"  },
+  { symbol:"AMZN",  name:"Amazon.com Inc.",        price:198.12,   type:"stock"  },
+  { symbol:"GOOGL", name:"Alphabet Inc.",          price:175.84,   type:"stock"  },
+  { symbol:"META",  name:"Meta Platforms",         price:512.66,   type:"stock"  },
+  { symbol:"NFLX",  name:"Netflix Inc.",           price:634.10,   type:"stock"  },
+  { symbol:"AMD",   name:"Advanced Micro Devices", price:164.55,   type:"stock"  },
+  { symbol:"PYPL",  name:"PayPal Holdings",        price:68.30,    type:"stock"  },
+  { symbol:"BTC",   name:"Bitcoin",                price:67420.00, type:"crypto" },
+  { symbol:"ETH",   name:"Ethereum",               price:3512.88,  type:"crypto" },
+  { symbol:"SOL",   name:"Solana",                 price:182.44,   type:"crypto" },
+  { symbol:"BNB",   name:"BNB",                    price:592.10,   type:"crypto" },
+  { symbol:"XRP",   name:"XRP",                    price:0.524,    type:"crypto" },
+  { symbol:"DOGE",  name:"Dogecoin",               price:0.162,    type:"crypto" },
+  { symbol:"ADA",   name:"Cardano",                price:0.451,    type:"crypto" },
+  { symbol:"AVAX",  name:"Avalanche",              price:37.80,    type:"crypto" }
+];
+var NEWS = [
   { id:1, symbol:"ASML", title:"ASML Reports Record EUV Backlog Amid AI Chip Surge",
     summary:"ASML's extreme ultraviolet lithography machines are in unprecedented demand as chipmakers race to build AI-capable fabs. The company's order book has swelled to record highs, with delivery slots booked well into 2027.",
-    advice:"Highly bullish. ASML holds a global monopoly on EUV machines — no competitor can replicate this technology. Long-term holders should remain confident. Short-term dips are buying opportunities.",
+    advice:"Highly bullish. ASML holds a global monopoly on EUV machines. Long-term holders should remain confident. Short-term dips are buying opportunities.",
     time:"1h ago", sentiment:"positive" },
   { id:2, symbol:"DIS", title:"Disney+ Subscriber Growth Beats Estimates in Q2",
     summary:"Walt Disney reported stronger-than-expected Disney+ subscriber additions, driven by password-sharing crackdowns and new content releases. The parks division also posted record revenue.",
-    advice:"Cautiously bullish. Streaming profitability is improving and parks remain a cash cow. However, cord-cutting headwinds in the linear TV segment persist. A solid hold for patient investors.",
+    advice:"Cautiously bullish. Streaming profitability is improving and parks remain a cash cow. A solid hold for patient investors.",
     time:"3h ago", sentiment:"positive" },
   { id:3, symbol:"LINK", title:"Chainlink Expands Real-World Asset Oracle Network",
     summary:"Chainlink announced new partnerships with major financial institutions to bring real-world asset data on-chain, positioning LINK as the backbone of tokenized finance infrastructure.",
-    advice:"Bullish long-term. Chainlink's oracle network is becoming critical infrastructure for DeFi and tokenized assets. Increased institutional adoption is a strong catalyst. Watch for broader crypto market correlation risk.",
+    advice:"Bullish long-term. Chainlink's oracle network is becoming critical infrastructure for DeFi and tokenized assets.",
     time:"5h ago", sentiment:"positive" },
   { id:4, symbol:"DIS", title:"ESPN Standalone Streaming Launch Set for Late 2025",
-    summary:"Disney confirmed its standalone ESPN streaming service will launch later this year, targeting sports fans who have cut the cable cord. Pricing and bundling details were revealed at an investor day presentation.",
-    advice:"Positive catalyst. ESPN streaming could unlock a large addressable market. Success depends on pricing strategy and rights retention. Monitor subscriber uptake closely at launch.",
+    summary:"Disney confirmed its standalone ESPN streaming service will launch later this year, targeting sports fans who have cut the cable cord.",
+    advice:"Positive catalyst. ESPN streaming could unlock a large addressable market. Monitor subscriber uptake closely at launch.",
     time:"7h ago", sentiment:"positive" },
   { id:5, symbol:"ASML", title:"US Export Controls Could Limit ASML China Sales",
-    summary:"New US semiconductor export regulations may further restrict ASML's ability to service and ship equipment to Chinese chipmakers, potentially impacting a meaningful portion of its revenue.",
-    advice:"Short-term headwind. China has historically represented a notable portion of ASML's sales. However, demand from TSMC, Samsung, and Intel more than offsets any China exposure loss. Hold and monitor policy developments.",
+    summary:"New US semiconductor export regulations may further restrict ASML's ability to service and ship equipment to Chinese chipmakers.",
+    advice:"Short-term headwind. Demand from TSMC, Samsung, and Intel more than offsets any China exposure loss. Hold and monitor policy developments.",
     time:"9h ago", sentiment:"neutral" },
   { id:6, symbol:"LINK", title:"LINK Surges as DeFi TVL Hits 2-Year High",
-    summary:"Total value locked in decentralized finance protocols climbed to its highest level in two years, boosting demand for Chainlink's oracle services which underpin the majority of leading DeFi platforms.",
-    advice:"Bullish. Rising DeFi activity directly increases Chainlink's utility and fee revenue. If TVL growth continues, LINK is well positioned for further gains. Consider a gradual accumulation strategy.",
-    time:"11h ago", sentiment:"positive" },
+    summary:"Total value locked in decentralized finance protocols climbed to its highest level in two years, boosting demand for Chainlink's oracle services.",
+    advice:"Bullish. Rising DeFi activity directly increases Chainlink's utility and fee revenue. Consider a gradual accumulation strategy.",
+    time:"11h ago", sentiment:"positive" }
 ];
-const INIT_ALERTS = [
-  { id:1, symbol:"ASML", condition:"above", target:760,  active:true  },
-  { id:2, symbol:"DIS",  condition:"below", target:108,  active:true  },
-  { id:3, symbol:"LINK", condition:"above", target:16,   active:false },
+var INIT_ALERTS = [
+  { id:1, symbol:"ASML", condition:"above", target:760, active:true  },
+  { id:2, symbol:"DIS",  condition:"below", target:108, active:true  },
+  { id:3, symbol:"LINK", condition:"above", target:16,  active:false }
 ];
-const CURRENCIES = [
+var CURRENCIES = [
   { code:"USD", symbol:"$",   rate:1     },
   { code:"EUR", symbol:"€",   rate:0.92  },
   { code:"GBP", symbol:"£",   rate:0.79  },
@@ -102,33 +104,42 @@ const CURRENCIES = [
   { code:"CAD", symbol:"CA$", rate:1.36  },
   { code:"AUD", symbol:"A$",  rate:1.53  },
   { code:"CHF", symbol:"Fr",  rate:0.90  },
-  { code:"INR", symbol:"₹",   rate:83.1  },
+  { code:"INR", symbol:"₹",   rate:83.1  }
 ];
-const sentimentColor = { positive:"#22c55e", negative:"#ef4444", neutral:"#f59e0b" };
-const sentimentBg    = { positive:"#052e16", negative:"#450a0a", neutral:"#431407" };
+var sentimentColor = { positive:"#22c55e", negative:"#ef4444", neutral:"#f59e0b" };
+var sentimentBg    = { positive:"#052e16", negative:"#450a0a", neutral:"#431407" };
 
-const makeFmt = (currency) => (n, crypto=false) => {
-  const v = n * currency.rate;
-  const s = currency.symbol;
-  return (crypto && v > 1000)
-    ? s + v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
-    : s + v.toFixed(2);
-};
+function makeFmt(currency) {
+  return function(n, crypto) {
+    var v = n * currency.rate;
+    var s = currency.symbol;
+    if (crypto && v > 1000)
+      return s + v.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 });
+    return s + v.toFixed(2);
+  };
+}
 
-function AssetCard({ asset, onRemove, holding, onHoldingChange, fmt }) {
-  const up = asset.change >= 0;
-  const qty = parseFloat(holding) || 0;
-  const holdingValue  = qty > 0 ? asset.price * qty : null;
-  const holdingChange = qty > 0 ? asset.change * qty : null;
-  const isCrypto = asset.type === "crypto";
+function AssetCard(props) {
+  var asset = props.asset;
+  var onRemove = props.onRemove;
+  var holding = props.holding;
+  var onHoldingChange = props.onHoldingChange;
+  var fmt = props.fmt;
+  var up = asset.change >= 0;
+  var qty = parseFloat(holding) || 0;
+  var holdingValue  = qty > 0 ? asset.price * qty : null;
+  var holdingChange = qty > 0 ? asset.change * qty : null;
+  var isCrypto = asset.type === "crypto";
   return (
     <div style={{ background:"#111822", border:"1px solid #1a2332", borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:up?"#052e16":"#450a0a",
-            border:`1px solid ${up?"#22c55e33":"#ef444433"}`, display:"flex", alignItems:"center",
-            justifyContent:"center", fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:800,
-            color:up?"#22c55e":"#ef4444", flexShrink:0 }}>
+          <div style={{ width:38, height:38, borderRadius:10,
+            background:up ? "#052e16" : "#450a0a",
+            border:"1px solid " + (up ? "#22c55e33" : "#ef444433"),
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontFamily:"'Syne',sans-serif", fontSize:11, fontWeight:800,
+            color:up ? "#22c55e" : "#ef4444", flexShrink:0 }}>
             {asset.symbol.slice(0,3)}
           </div>
           <div>
@@ -139,14 +150,14 @@ function AssetCard({ asset, onRemove, holding, onHoldingChange, fmt }) {
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontSize:14, fontWeight:500, color:"#e2f0ff" }}>{fmt(asset.price, isCrypto)}</div>
-            <div style={{ fontSize:11, color:up?"#22c55e":"#ef4444" }}>
-              {up?"▲":"▼"} {Math.abs(asset.changePercent).toFixed(2)}%
+            <div style={{ fontSize:11, color:up ? "#22c55e" : "#ef4444" }}>
+              {up ? "▲" : "▼"} {Math.abs(asset.changePercent).toFixed(2)}%
             </div>
           </div>
           {onRemove && (
             <button onClick={onRemove} style={{ background:"none", border:"1px solid #1a2332", color:"#4a6080",
               borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:12,
-              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>✕</button>
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>x</button>
           )}
         </div>
       </div>
@@ -154,13 +165,15 @@ function AssetCard({ asset, onRemove, holding, onHoldingChange, fmt }) {
         <div style={{ fontSize:11, color:"#4a6080", flexShrink:0 }}>
           {isCrypto ? "Units owned:" : "Shares owned:"}
         </div>
-        <input type="number" min="0" value={holding} onChange={e=>onHoldingChange(e.target.value)}
-          placeholder="0" style={{ width:90, background:"#0d1117", border:"1px solid #1a2a3a",
+        <input type="number" min="0" value={holding}
+          onChange={function(e){ onHoldingChange(e.target.value); }}
+          placeholder="0"
+          style={{ width:90, background:"#0d1117", border:"1px solid #1a2a3a",
             color:"#e2f0ff", borderRadius:6, padding:"4px 8px", fontSize:12, textAlign:"right" }} />
         {holdingValue !== null ? (
           <div style={{ marginLeft:"auto", textAlign:"right" }}>
             <div style={{ fontSize:13, fontWeight:500, color:"#e2f0ff" }}>{fmt(holdingValue)}</div>
-            <div style={{ fontSize:11, color:up?"#22c55e":"#ef4444" }}>
+            <div style={{ fontSize:11, color:up ? "#22c55e" : "#ef4444" }}>
               {holdingChange >= 0 ? "+" : ""}{fmt(holdingChange)} today
             </div>
           </div>
@@ -173,251 +186,269 @@ function AssetCard({ asset, onRemove, holding, onHoldingChange, fmt }) {
 }
 
 function App() {
-  const [tab, setTab]                   = useState("portfolio");
-  const [assets, setAssets]             = useState([...STOCKS, ...CRYPTOS]);
-  const [alerts, setAlerts]             = useState(INIT_ALERTS);
-  const [notification, setNotification] = useState(null);
-  const [addAlertModal, setAddAlertModal]   = useState(false);
-  const [newAlert, setNewAlert]             = useState({ symbol:"ASML", target:"" });
-  const [selectedNews, setSelectedNews]     = useState(null);
-  const [ticker, setTicker]                 = useState(0);
-  const [addAssetModal, setAddAssetModal]   = useState(false);
-  const [assetSearch, setAssetSearch]       = useState("");
-  const [confirmRemove, setConfirmRemove]   = useState(null);
-  const [editAlert, setEditAlert]           = useState(null);
-  const [dragAlert, setDragAlert]           = useState(null);
-  const [holdings, setHoldings]             = useState({ ASML:"", DIS:"", LINK:"" });
-  const [currencyCode, setCurrencyCode]     = useState("CAD");
-  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
-  const [priceStatus, setPriceStatus]       = useState("loading");
-  const [lastUpdated, setLastUpdated]       = useState(null);
+  var s1  = useState("portfolio");      var tab = s1[0]; var setTab = s1[1];
+  var s2  = useState(STOCKS.concat(CRYPTOS)); var assets = s2[0]; var setAssets = s2[1];
+  var s3  = useState(INIT_ALERTS);      var alerts = s3[0]; var setAlerts = s3[1];
+  var s4  = useState(null);             var notification = s4[0]; var setNotification = s4[1];
+  var s5  = useState(false);            var addAlertModal = s5[0]; var setAddAlertModal = s5[1];
+  var s6  = useState({symbol:"ASML",target:""}); var newAlert = s6[0]; var setNewAlert = s6[1];
+  var s7  = useState(null);             var selectedNews = s7[0]; var setSelectedNews = s7[1];
+  var s8  = useState(0);                var ticker = s8[0]; var setTicker = s8[1];
+  var s9  = useState(false);            var addAssetModal = s9[0]; var setAddAssetModal = s9[1];
+  var s10 = useState("");               var assetSearch = s10[0]; var setAssetSearch = s10[1];
+  var s11 = useState(null);             var confirmRemove = s11[0]; var setConfirmRemove = s11[1];
+  var s12 = useState(null);             var editAlert = s12[0]; var setEditAlert = s12[1];
+  var s13 = useState(null);             var dragAlert = s13[0]; var setDragAlert = s13[1];
+  var s14 = useState({ASML:"",DIS:"",LINK:""}); var holdings = s14[0]; var setHoldings = s14[1];
+  var s15 = useState("CAD");            var currencyCode = s15[0]; var setCurrencyCode = s15[1];
+  var s16 = useState(false);            var showCurrencyPicker = s16[0]; var setShowCurrencyPicker = s16[1];
+  var s17 = useState("loading");        var priceStatus = s17[0]; var setPriceStatus = s17[1];
+  var s18 = useState(null);             var lastUpdated = s18[0]; var setLastUpdated = s18[1];
 
-  const soundLoopRef = useRef(null);
-  const assetsRef    = useRef(assets);
-  useEffect(() => { assetsRef.current = assets; }, [assets]);
+  var soundLoopRef = useRef(null);
+  var assetsRef    = useRef(assets);
 
-  const currency = CURRENCIES.find(c => c.code === currencyCode);
-  const fmt = makeFmt(currency);
+  useEffect(function() { assetsRef.current = assets; }, [assets]);
 
-  const fetchPrices = useCallback(async () => {
-    try {
-      const currentAssets = assetsRef.current;
+  var currency = null;
+  for (var ci = 0; ci < CURRENCIES.length; ci++) {
+    if (CURRENCIES[ci].code === currencyCode) { currency = CURRENCIES[ci]; break; }
+  }
+  var fmt = makeFmt(currency);
 
-      // --- Stocks via Finnhub ---
-      const stockSymbols = currentAssets.filter(a=>a.type==="stock").map(a=>a.symbol);
-      const stockResults = await Promise.all(stockSymbols.map(async sym => {
-        const [quoteRes, profileRes] = await Promise.all([
-          fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`),
-          fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${sym}&token=${FINNHUB_KEY}`)
-        ]);
-        const quote   = await quoteRes.json();
-        const profile = await profileRes.json();
-        if (!quote.c) return null;
-        return {
-          symbol: sym,
-          price: quote.c,
-          change: quote.d || 0,
-          changePercent: quote.dp || 0,
-          name: profile.name || sym,
-          type: "stock",
-        };
-      }));
+  var fetchPrices = useCallback(function() {
+    var cur = assetsRef.current;
+    var stockSymbols = cur.filter(function(a){ return a.type === "stock"; }).map(function(a){ return a.symbol; });
+    var cryptoAssets = cur.filter(function(a){ return a.type === "crypto"; });
+    var cgIds = cryptoAssets.map(function(a){ return COINGECKO_IDS[a.symbol] || ""; }).filter(function(id){ return id !== ""; }).join(",");
 
-      // --- Crypto via CoinGecko ---
-      const cryptoAssets = currentAssets.filter(a=>a.type==="crypto");
-      const cgIds = cryptoAssets.map(a=>COINGECKO_IDS[a.symbol]).filter(Boolean).join(",");
-      let cryptoResults = [];
-      if (cgIds) {
-        const cgRes  = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgIds}&vs_currencies=usd&include_24hr_change=true`);
-        const cgData = await cgRes.json();
-        cryptoResults = cryptoAssets.map(a => {
-          const id   = COINGECKO_IDS[a.symbol];
-          const data = cgData[id];
-          if (!data) return null;
-          const price  = data.usd;
-          const pct    = data.usd_24h_change || 0;
-          const change = (price / (1 + pct/100)) * (pct/100);
-          return { ...a, price, change, changePercent: pct };
+    var stockPromises = stockSymbols.map(function(sym) {
+      var quoteUrl   = "https://finnhub.io/api/v1/quote?symbol=" + sym + "&token=" + FINNHUB_KEY;
+      var profileUrl = "https://finnhub.io/api/v1/stock/profile2?symbol=" + sym + "&token=" + FINNHUB_KEY;
+      return Promise.all([
+        fetch(quoteUrl).then(function(r){ return r.json(); }),
+        fetch(profileUrl).then(function(r){ return r.json(); })
+      ]).then(function(res) {
+        var quote = res[0]; var profile = res[1];
+        if (!quote || !quote.c) return null;
+        return { symbol:sym, price:quote.c, change:quote.d || 0, changePercent:quote.dp || 0,
+                 name:profile.name || sym, type:"stock" };
+      }).catch(function() { return null; });
+    });
+
+    var cryptoPromise = cgIds
+      ? fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + cgIds + "&vs_currencies=usd&include_24hr_change=true")
+          .then(function(r) { return r.json(); })
+          .then(function(cgData) {
+            return cryptoAssets.map(function(a) {
+              var id = COINGECKO_IDS[a.symbol];
+              var data = id ? cgData[id] : null;
+              if (!data) return null;
+              var price = data.usd;
+              var pct   = data.usd_24h_change || 0;
+              var change = (price / (1 + pct / 100)) * (pct / 100);
+              return { symbol:a.symbol, name:a.name, type:"crypto", price:price, change:change, changePercent:pct };
+            });
+          }).catch(function() { return []; })
+      : Promise.resolve([]);
+
+    Promise.all([Promise.all(stockPromises), cryptoPromise])
+      .then(function(res) {
+        var all = res[0].concat(res[1]).filter(function(r){ return r !== null; });
+        if (all.length === 0) { setPriceStatus("error"); return; }
+        setAssets(function(prev) {
+          return prev.map(function(a) {
+            var u = null;
+            for (var i = 0; i < all.length; i++) { if (all[i].symbol === a.symbol) { u = all[i]; break; } }
+            if (!u) return a;
+            return { symbol:a.symbol, name:u.name||a.name, type:a.type, price:u.price, change:u.change, changePercent:u.changePercent };
+          });
         });
-      }
-
-      const allResults = [...stockResults, ...cryptoResults].filter(Boolean);
-      if (allResults.length === 0) { setPriceStatus("error"); return; }
-
-      setAssets(prev => prev.map(a => {
-        const updated = allResults.find(r=>r.symbol===a.symbol);
-        return updated ? { ...a, ...updated } : a;
-      }));
-
-      allResults.forEach(r => {
-        const ka = KNOWN_ASSETS.find(k=>k.symbol===r.symbol);
-        if (ka) ka.price = r.price;
-      });
-
-      setPriceStatus("live");
-      setLastUpdated(new Date());
-      setTicker(t=>t+1);
-    } catch(e) {
-      console.error("Price fetch error:", e);
-      setPriceStatus("error");
-    }
+        for (var i = 0; i < all.length; i++) {
+          for (var j = 0; j < KNOWN_ASSETS.length; j++) {
+            if (KNOWN_ASSETS[j].symbol === all[i].symbol) { KNOWN_ASSETS[j].price = all[i].price; break; }
+          }
+        }
+        setPriceStatus("live");
+        setLastUpdated(new Date());
+        setTicker(function(t) { return t + 1; });
+      })
+      .catch(function() { setPriceStatus("error"); });
   }, []);
 
-  // Fetch on mount and every 60 seconds
-  useEffect(() => {
+  useEffect(function() {
     fetchPrices();
-    const id = setInterval(fetchPrices, 60000);
-    return () => clearInterval(id);
+    var id = setInterval(fetchPrices, 60000);
+    return function() { clearInterval(id); };
   }, []);
 
-  const playDing = useCallback(() => {
+  var playDing = useCallback(function() {
     try {
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const note = (freq, t, dur) => {
-        const o=ctx.createOscillator(), g=ctx.createGain();
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      function note(freq, t, dur) {
+        var o = ctx.createOscillator(); var g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
-        o.type="sine"; o.frequency.setValueAtTime(freq,t);
-        g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-        o.start(t); o.stop(t+dur);
-      };
-      note(880,  ctx.currentTime,      0.3);
-      note(1100, ctx.currentTime+0.15, 0.3);
-      note(1320, ctx.currentTime+0.3,  0.5);
-    } catch(e){}
-  },[]);
+        o.type = "sine"; o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.start(t); o.stop(t + dur);
+      }
+      note(880,  ctx.currentTime,       0.3);
+      note(1100, ctx.currentTime + 0.15, 0.3);
+      note(1320, ctx.currentTime + 0.3,  0.5);
+    } catch(e) {}
+  }, []);
 
-  const playBuzzer = useCallback(() => {
+  var playBuzzer = useCallback(function() {
     try {
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
-      const buzz = (t) => {
-        const o=ctx.createOscillator(), g=ctx.createGain();
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      function buzz(t) {
+        var o = ctx.createOscillator(); var g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
-        o.type="sawtooth"; o.frequency.setValueAtTime(220,t);
-        o.frequency.linearRampToValueAtTime(80,t+0.4);
-        g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
-        o.start(t); o.stop(t+0.5);
-      };
-      buzz(ctx.currentTime); buzz(ctx.currentTime+0.55);
-    } catch(e){}
-  },[]);
+        o.type = "sawtooth"; o.frequency.setValueAtTime(220, t);
+        o.frequency.linearRampToValueAtTime(80, t + 0.4);
+        g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        o.start(t); o.stop(t + 0.5);
+      }
+      buzz(ctx.currentTime); buzz(ctx.currentTime + 0.55);
+    } catch(e) {}
+  }, []);
 
-  const startSoundLoop = useCallback((type) => {
+  var startSoundLoop = useCallback(function(type) {
     if (soundLoopRef.current) clearInterval(soundLoopRef.current);
-    const fn = type==="above" ? playDing : playBuzzer;
+    var fn = type === "above" ? playDing : playBuzzer;
     fn();
     soundLoopRef.current = setInterval(fn, 2500);
-  },[playDing, playBuzzer]);
+  }, [playDing, playBuzzer]);
 
-  const stopSoundLoop = useCallback(() => {
-    if (soundLoopRef.current) { clearInterval(soundLoopRef.current); soundLoopRef.current=null; }
-  },[]);
+  var stopSoundLoop = useCallback(function() {
+    if (soundLoopRef.current) { clearInterval(soundLoopRef.current); soundLoopRef.current = null; }
+  }, []);
 
-  const dismissNotification = useCallback(() => {
+  var dismissNotification = useCallback(function() {
     stopSoundLoop(); setNotification(null);
-  },[stopSoundLoop]);
+  }, [stopSoundLoop]);
 
-  // Check alerts
-  useEffect(() => {
-    alerts.forEach(alert => {
-      if (!alert.active) return;
-      const asset = assets.find(a => a.symbol===alert.symbol);
-      if (!asset) return;
-      const triggered = (alert.condition==="above" && asset.price>=alert.target)
-                     || (alert.condition==="below" && asset.price<=alert.target);
+  useEffect(function() {
+    for (var i = 0; i < alerts.length; i++) {
+      var alert = alerts[i];
+      if (!alert.active) continue;
+      var asset = null;
+      for (var j = 0; j < assets.length; j++) { if (assets[j].symbol === alert.symbol) { asset = assets[j]; break; } }
+      if (!asset) continue;
+      var triggered = (alert.condition === "above" && asset.price >= alert.target)
+                   || (alert.condition === "below" && asset.price <= alert.target);
       if (triggered) {
-        setNotification(prev => {
-          if (prev?.symbol===alert.symbol && prev?.condition===alert.condition) return prev;
-          startSoundLoop(alert.condition);
+        var _alert = alert; var _asset = asset;
+        setNotification(function(prev) {
+          if (prev && prev.symbol === _alert.symbol && prev.condition === _alert.condition) return prev;
+          startSoundLoop(_alert.condition);
           return {
-            symbol: alert.symbol, condition: alert.condition,
-            message: `${alert.symbol} ${alert.condition==="above"?"reached":"dropped to"} ${fmt(alert.target, asset.type==="crypto")}`,
-            price: fmt(asset.price, asset.type==="crypto"),
+            symbol: _alert.symbol,
+            condition: _alert.condition,
+            message: _alert.symbol + " " + (_alert.condition === "above" ? "reached" : "dropped to") + " " + fmt(_alert.target, _asset.type === "crypto"),
+            price: fmt(_asset.price, _asset.type === "crypto")
           };
         });
       }
-    });
+    }
   }, [ticker]);
 
-  // Portfolio totals
-  const totalValue  = assets.reduce((s,a)=>{ const q=parseFloat(holdings[a.symbol])||0; return s+(q>0?a.price*q:0); },0);
-  const totalChange = assets.reduce((s,a)=>{ const q=parseFloat(holdings[a.symbol])||0; return s+(q>0?a.change*q:0); },0);
-  const totalChangePct = totalValue-totalChange>0 ? (totalChange/(totalValue-totalChange))*100 : 0;
-  const hasAnyHoldings = assets.some(a => parseFloat(holdings[a.symbol])>0);
+  var totalValue = 0; var totalChange = 0;
+  for (var ai = 0; ai < assets.length; ai++) {
+    var qty = parseFloat(holdings[assets[ai].symbol]) || 0;
+    if (qty > 0) { totalValue += assets[ai].price * qty; totalChange += assets[ai].change * qty; }
+  }
+  var totalChangePct = totalValue - totalChange > 0 ? (totalChange / (totalValue - totalChange)) * 100 : 0;
+  var hasAnyHoldings = false;
+  for (var hi = 0; hi < assets.length; hi++) { if (parseFloat(holdings[assets[hi].symbol]) > 0) { hasAnyHoldings = true; break; } }
 
-  // Alert helpers
-  const removeAlert  = id => setAlerts(prev=>prev.filter(a=>a.id!==id));
-  const toggleAlert  = id => setAlerts(prev=>prev.map(a=>a.id===id?{...a,active:!a.active}:a));
-  const reorderAlerts = (fromId, toId) => {
-    if (fromId===toId) return;
-    setAlerts(prev=>{
-      const arr=[...prev];
-      const fi=arr.findIndex(a=>a.id===fromId), ti=arr.findIndex(a=>a.id===toId);
-      const [item]=arr.splice(fi,1); arr.splice(ti,0,item); return arr;
+  function removeAlertFn(id)  { setAlerts(function(prev){ return prev.filter(function(a){ return a.id !== id; }); }); }
+  function toggleAlertFn(id)  { setAlerts(function(prev){ return prev.map(function(a){ return a.id === id ? Object.assign({}, a, {active:!a.active}) : a; }); }); }
+
+  function reorderAlerts(fromId, toId) {
+    if (fromId === toId) return;
+    setAlerts(function(prev) {
+      var arr = prev.slice();
+      var fi = -1; var ti = -1;
+      for (var i = 0; i < arr.length; i++) { if (arr[i].id === fromId) fi = i; if (arr[i].id === toId) ti = i; }
+      var item = arr.splice(fi, 1)[0]; arr.splice(ti, 0, item); return arr;
     });
-  };
-  const updateAlertTarget = () => {
-    if (!editAlert||!editAlert.target) return;
-    const target=parseFloat(editAlert.target);
-    setAlerts(prev=>prev.map(a=>{
-      if (a.id!==editAlert.id) return a;
-      const asset=assets.find(x=>x.symbol===a.symbol);
-      return { ...a, target, condition: asset&&target>=asset.price?"above":"below" };
-    }));
+  }
+
+  function updateAlertTarget() {
+    if (!editAlert || !editAlert.target) return;
+    var target = parseFloat(editAlert.target);
+    var eid = editAlert.id;
+    setAlerts(function(prev) {
+      return prev.map(function(a) {
+        if (a.id !== eid) return a;
+        var asset = null;
+        for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === a.symbol) { asset = assets[i]; break; } }
+        var cond = asset && target >= asset.price ? "above" : "below";
+        return Object.assign({}, a, { target:target, condition:cond });
+      });
+    });
     setEditAlert(null);
-  };
-  const addAlert = () => {
+  }
+
+  function addAlertFn() {
     if (!newAlert.target) return;
-    const target=parseFloat(newAlert.target);
-    const asset=assets.find(a=>a.symbol===newAlert.symbol);
-    const condition=asset&&target>=asset.price?"above":"below";
-    setAlerts(prev=>[...prev,{...newAlert,id:Date.now(),target,condition,active:true}]);
+    var target = parseFloat(newAlert.target);
+    var asset = null;
+    for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === newAlert.symbol) { asset = assets[i]; break; } }
+    var cond = asset && target >= asset.price ? "above" : "below";
+    var sym = newAlert.symbol;
+    setAlerts(function(prev) { return prev.concat([{ id:Date.now(), symbol:sym, target:target, condition:cond, active:true }]); });
     setAddAlertModal(false);
-    setNewAlert({ symbol:assets[0]?.symbol||"ASML", target:"" });
-  };
+    setNewAlert({ symbol: assets.length > 0 ? assets[0].symbol : "ASML", target:"" });
+  }
 
-  // Asset helpers
-  const addAsset = known => {
-    if (assets.find(a=>a.symbol===known.symbol)) return;
-    setAssets(prev=>[...prev,{...known,change:0,changePercent:0}]);
+  function addAssetFn(known) {
+    for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === known.symbol) return; }
+    var newA = { symbol:known.symbol, name:known.name, price:known.price, change:0, changePercent:0, type:known.type };
+    setAssets(function(prev) { return prev.concat([newA]); });
     setAddAssetModal(false); setAssetSearch("");
-  };
-  const removeAsset = symbol => {
-    setAssets(prev=>prev.filter(a=>a.symbol!==symbol));
-    setAlerts(prev=>prev.filter(a=>a.symbol!==symbol));
-    setConfirmRemove(null);
-  };
+  }
 
-  const filteredKnown = KNOWN_ASSETS.filter(k =>
-    !assets.find(a=>a.symbol===k.symbol) &&
-    (k.symbol.toLowerCase().includes(assetSearch.toLowerCase()) ||
-     k.name.toLowerCase().includes(assetSearch.toLowerCase()))
-  );
-  const allSymbols = assets.map(a=>a.symbol);
+  function removeAssetFn(symbol) {
+    setAssets(function(prev) { return prev.filter(function(a){ return a.symbol !== symbol; }); });
+    setAlerts(function(prev) { return prev.filter(function(a){ return a.symbol !== symbol; }); });
+    setConfirmRemove(null);
+  }
+
+  var filteredKnown = KNOWN_ASSETS.filter(function(k) {
+    var inPortfolio = false;
+    for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === k.symbol) { inPortfolio = true; break; } }
+    if (inPortfolio) return false;
+    var search = assetSearch.toLowerCase();
+    return k.symbol.toLowerCase().indexOf(search) >= 0 || k.name.toLowerCase().indexOf(search) >= 0;
+  });
+  var allSymbols = assets.map(function(a) { return a.symbol; });
+
+  var statusDot   = priceStatus === "live" ? "#22c55e" : priceStatus === "error" ? "#ef4444" : "#f59e0b";
+  var statusLabel = priceStatus === "live" ? "Live" : priceStatus === "error" ? "Offline" : "Loading...";
 
   return (
     <div style={{ fontFamily:"'DM Mono','Courier New',monospace", background:"#080c14",
       minHeight:"100vh", display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"20px 0" }}>
 
-      {/* Phone shell */}
       <div style={{ width:390, minHeight:780, background:"#0d1117", borderRadius:44, overflow:"hidden",
         boxShadow:"0 0 0 1px #1e2a3a, 0 40px 120px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
         position:"relative", display:"flex", flexDirection:"column" }}>
 
-        {/* Status bar */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
           padding:"14px 28px 0", color:"#fff", fontSize:12, fontWeight:500 }}>
           <span>9:41</span>
           <div style={{ width:120, height:30, background:"#0d1117", borderRadius:20,
             position:"absolute", left:"50%", transform:"translateX(-50%)", top:0 }} />
           <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-            <span>●●●</span><span>WiFi</span><span>🔋</span>
+            <span>WiFi</span><span>100%</span>
           </div>
         </div>
 
-        {/* Header */}
         <div style={{ padding:"16px 24px 12px", borderBottom:"1px solid #1a2332", position:"relative" }}>
           {showCurrencyPicker && (
-            <div onClick={()=>setShowCurrencyPicker(false)}
+            <div onClick={function(){ setShowCurrencyPicker(false); }}
               style={{ position:"fixed", inset:0, zIndex:199 }} />
           )}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -426,72 +457,72 @@ function App() {
                 HOL<span style={{ color:"#3b82f6" }}>DINGO</span>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:4 }}>
-                <button onClick={()=>setShowCurrencyPicker(p=>!p)} style={{ background:"#1a2a3a",
-                  border:"1px solid #2a3a4a", color:"#60a5fa", borderRadius:6, padding:"2px 7px",
-                  fontSize:10, cursor:"pointer", fontFamily:"'DM Mono',monospace", letterSpacing:0.5 }}>
-                  {currencyCode} ▾
+                <button onClick={function(){ setShowCurrencyPicker(function(p){ return !p; }); }}
+                  style={{ background:"#1a2a3a", border:"1px solid #2a3a4a", color:"#60a5fa",
+                    borderRadius:6, padding:"2px 7px", fontSize:10, cursor:"pointer", letterSpacing:0.5 }}>
+                  {currencyCode} v
                 </button>
-                <button onClick={fetchPrices} title="Refresh prices" style={{ background:"#1a2a3a",
-                  border:"1px solid #2a3a4a", color:"#60a5fa", borderRadius:6, padding:"2px 7px",
-                  fontSize:12, cursor:"pointer" }}>⟳</button>
+                <button onClick={fetchPrices}
+                  style={{ background:"#1a2a3a", border:"1px solid #2a3a4a", color:"#60a5fa",
+                    borderRadius:6, padding:"2px 7px", fontSize:12, cursor:"pointer" }}>R</button>
               </div>
               {showCurrencyPicker && (
                 <div style={{ position:"absolute", top:72, left:24, zIndex:200, background:"#111822",
                   border:"1px solid #1a2a3a", borderRadius:12, padding:8,
                   display:"flex", flexDirection:"column", gap:2, boxShadow:"0 8px 32px rgba(0,0,0,0.6)" }}>
-                  {CURRENCIES.map(c=>(
-                    <button key={c.code} onClick={()=>{ setCurrencyCode(c.code); setShowCurrencyPicker(false); }}
-                      style={{ background:c.code===currencyCode?"#1a3a6a":"none", border:"none", borderRadius:8,
-                        padding:"6px 14px", color:c.code===currencyCode?"#60a5fa":"#94a3b8",
-                        cursor:"pointer", fontSize:12, textAlign:"left", fontFamily:"'DM Mono',monospace" }}>
-                      <span style={{ color:"#4a6080", marginRight:6 }}>{c.symbol}</span>{c.code}
-                    </button>
-                  ))}
+                  {CURRENCIES.map(function(c) {
+                    return (
+                      <button key={c.code}
+                        onClick={function(){ setCurrencyCode(c.code); setShowCurrencyPicker(false); }}
+                        style={{ background:c.code === currencyCode ? "#1a3a6a" : "none",
+                          border:"none", borderRadius:8, padding:"6px 14px",
+                          color:c.code === currencyCode ? "#60a5fa" : "#94a3b8",
+                          cursor:"pointer", fontSize:12, textAlign:"left" }}>
+                        <span style={{ color:"#4a6080", marginRight:6 }}>{c.symbol}</span>{c.code}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:11, color:"#4a6080", display:"flex", alignItems:"center", justifyContent:"flex-end", gap:5 }}>
                 <span style={{ width:6, height:6, borderRadius:"50%", display:"inline-block",
-                  background: priceStatus==="live"?"#22c55e": priceStatus==="error"?"#ef4444":"#f59e0b",
-                  boxShadow: priceStatus==="live"?"0 0 4px #22c55e":"none" }} />
-                {priceStatus==="live" ? "Live" : priceStatus==="error" ? "Offline" : "Loading..."}
+                  background:statusDot, boxShadow:priceStatus==="live"?"0 0 4px #22c55e":"none" }} />
+                {statusLabel}
               </div>
               <div style={{ fontSize:18, fontWeight:500, color:"#e2f0ff" }}>
                 {hasAnyHoldings ? fmt(totalValue) : "—"}
               </div>
-              <div style={{ fontSize:12, color:hasAnyHoldings?(totalChange>=0?"#22c55e":"#ef4444"):"#4a6080" }}>
+              <div style={{ fontSize:12, color:hasAnyHoldings ? (totalChange >= 0 ? "#22c55e" : "#ef4444") : "#4a6080" }}>
                 {hasAnyHoldings
-                  ? `${totalChange>=0?"▲":"▼"} ${Math.abs(totalChangePct).toFixed(2)}% today`
+                  ? (totalChange >= 0 ? "up " : "dn ") + Math.abs(totalChangePct).toFixed(2) + "% today"
                   : "Enter holdings below"}
               </div>
               {lastUpdated && (
                 <div style={{ fontSize:10, color:"#2a3a4a", marginTop:2 }}>
-                  Updated {lastUpdated.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}
+                  Updated {lastUpdated.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Notification banner */}
         {notification && (
           <div onClick={dismissNotification} style={{
             margin:"8px 16px 0",
-            background:notification.condition==="above"
-              ?"linear-gradient(135deg,#0a2a1a,#0d2010)"
-              :"linear-gradient(135deg,#2a0a0a,#1a0808)",
-            border:`1px solid ${notification.condition==="above"?"#22c55e88":"#ef444488"}`,
+            background:notification.condition === "above" ? "linear-gradient(135deg,#0a2a1a,#0d2010)" : "linear-gradient(135deg,#2a0a0a,#1a0808)",
+            border:"1px solid " + (notification.condition === "above" ? "#22c55e88" : "#ef444488"),
             borderRadius:12, padding:"12px 14px", display:"flex", alignItems:"center",
             justifyContent:"space-between", gap:10, cursor:"pointer",
             animation:"alertPulse 1s ease-in-out infinite" }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ fontSize:22 }}>{notification.condition==="above"?"📈":"📉"}</div>
+              <div style={{ fontSize:22 }}>{notification.condition === "above" ? "up" : "dn"}</div>
               <div>
-                <div style={{ fontSize:12, fontWeight:500, color:notification.condition==="above"?"#22c55e":"#ef4444" }}>
-                  {notification.condition==="above"?"▲ Price Target Reached!":"▼ Price Dropped to Target!"}
+                <div style={{ fontSize:12, fontWeight:500, color:notification.condition === "above" ? "#22c55e" : "#ef4444" }}>
+                  {notification.condition === "above" ? "Price Target Reached!" : "Price Dropped to Target!"}
                 </div>
-                <div style={{ fontSize:11, color:notification.condition==="above"?"#86efac":"#fca5a5", marginTop:2 }}>
+                <div style={{ fontSize:11, color:notification.condition === "above" ? "#86efac" : "#fca5a5", marginTop:2 }}>
                   {notification.message} — Now {notification.price}
                 </div>
               </div>
@@ -502,100 +533,103 @@ function App() {
           </div>
         )}
 
-        {/* Tab bar */}
         <div style={{ display:"flex", borderBottom:"1px solid #1a2332", margin:"8px 0 0" }}>
-          {[{key:"portfolio",label:"Portfolio",icon:"📈"},{key:"alerts",label:"Alerts",icon:"🔔"},{key:"news",label:"News",icon:"📰"}].map(t=>(
-            <button key={t.key} onClick={()=>setTab(t.key)} style={{
-              flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 4px",
-              color:tab===t.key?"#3b82f6":"#4a6080", fontSize:11,
-              borderBottom:tab===t.key?"2px solid #3b82f6":"2px solid transparent", transition:"all 0.2s" }}>
-              <div style={{ fontSize:16 }}>{t.icon}</div>
-              <div style={{ marginTop:2, fontWeight:tab===t.key?500:400 }}>{t.label}</div>
-            </button>
-          ))}
+          {[{key:"portfolio",label:"Portfolio",icon:"P"},{key:"alerts",label:"Alerts",icon:"A"},{key:"news",label:"News",icon:"N"}].map(function(t) {
+            return (
+              <button key={t.key} onClick={function(){ setTab(t.key); }}
+                style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 4px",
+                  color:tab === t.key ? "#3b82f6" : "#4a6080", fontSize:11,
+                  borderBottom:tab === t.key ? "2px solid #3b82f6" : "2px solid transparent",
+                  transition:"all 0.2s" }}>
+                <div style={{ fontSize:16 }}>{t.icon}</div>
+                <div style={{ marginTop:2, fontWeight:tab === t.key ? 500 : 400 }}>{t.label}</div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Content */}
         <div style={{ flex:1, overflowY:"auto", padding:"12px 16px 80px" }}>
 
-          {/* ── PORTFOLIO ── */}
-          {tab==="portfolio" && (
+          {tab === "portfolio" && (
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
                 <div style={{ fontSize:11, color:"#4a6080", letterSpacing:1 }}>STOCKS</div>
-                <button onClick={()=>{ setAddAssetModal("stock"); setAssetSearch(""); }}
-                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6",
-                    borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Stock</button>
+                <button onClick={function(){ setAddAssetModal("stock"); setAssetSearch(""); }}
+                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6", borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Stock</button>
               </div>
-              {assets.filter(a=>a.type==="stock").map(a=>(
-                <AssetCard key={a.symbol} asset={a} fmt={fmt}
-                  onRemove={()=>setConfirmRemove(a)}
-                  holding={holdings[a.symbol]||""}
-                  onHoldingChange={val=>setHoldings(h=>({...h,[a.symbol]:val}))} />
-              ))}
-              {assets.filter(a=>a.type==="stock").length===0 && (
+              {assets.filter(function(a){ return a.type === "stock"; }).map(function(a) {
+                var sym = a.symbol;
+                return (
+                  <AssetCard key={sym} asset={a} fmt={fmt}
+                    onRemove={function(){ setConfirmRemove(a); }}
+                    holding={holdings[sym] || ""}
+                    onHoldingChange={function(val){ setHoldings(function(h){ var n = Object.assign({}, h); n[sym] = val; return n; }); }} />
+                );
+              })}
+              {assets.filter(function(a){ return a.type === "stock"; }).length === 0 && (
                 <div style={{ fontSize:12, color:"#4a6080", textAlign:"center", padding:"16px 0" }}>No stocks added yet</div>
               )}
 
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", margin:"16px 0 10px" }}>
                 <div style={{ fontSize:11, color:"#4a6080", letterSpacing:1 }}>CRYPTO</div>
-                <button onClick={()=>{ setAddAssetModal("crypto"); setAssetSearch(""); }}
-                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6",
-                    borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Crypto</button>
+                <button onClick={function(){ setAddAssetModal("crypto"); setAssetSearch(""); }}
+                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6", borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Crypto</button>
               </div>
-              {assets.filter(a=>a.type==="crypto").map(a=>(
-                <AssetCard key={a.symbol} asset={a} fmt={fmt}
-                  onRemove={()=>setConfirmRemove(a)}
-                  holding={holdings[a.symbol]||""}
-                  onHoldingChange={val=>setHoldings(h=>({...h,[a.symbol]:val}))} />
-              ))}
-              {assets.filter(a=>a.type==="crypto").length===0 && (
+              {assets.filter(function(a){ return a.type === "crypto"; }).map(function(a) {
+                var sym = a.symbol;
+                return (
+                  <AssetCard key={sym} asset={a} fmt={fmt}
+                    onRemove={function(){ setConfirmRemove(a); }}
+                    holding={holdings[sym] || ""}
+                    onHoldingChange={function(val){ setHoldings(function(h){ var n = Object.assign({}, h); n[sym] = val; return n; }); }} />
+                );
+              })}
+              {assets.filter(function(a){ return a.type === "crypto"; }).length === 0 && (
                 <div style={{ fontSize:12, color:"#4a6080", textAlign:"center", padding:"16px 0" }}>No crypto added yet</div>
               )}
 
-              {/* Add Asset Modal */}
               {addAssetModal && (
-                <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
-                  display:"flex", alignItems:"flex-end", zIndex:100 }}>
+                <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", alignItems:"flex-end", zIndex:100 }}>
                   <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%",
                     border:"1px solid #1a2a3a", maxHeight:"70vh", display:"flex", flexDirection:"column", boxSizing:"border-box" }}>
                     <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:12 }}>
-                      Add {addAssetModal==="stock"?"Stock":"Cryptocurrency"}
+                      Add {addAssetModal === "stock" ? "Stock" : "Cryptocurrency"}
                     </div>
-                    <input value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} autoFocus
-                      placeholder={`Search ${addAssetModal==="stock"?"stocks":"crypto"}...`}
+                    <input value={assetSearch} autoFocus
+                      onChange={function(e){ setAssetSearch(e.target.value); }}
+                      placeholder={"Search " + (addAssetModal === "stock" ? "stocks" : "crypto") + "..."}
                       style={{ width:"100%", background:"#0d1117", border:"1px solid #1a2a3a", color:"#e2f0ff",
                         borderRadius:8, padding:"8px 12px", fontSize:13, marginBottom:12, boxSizing:"border-box" }} />
                     <div style={{ overflowY:"auto", flex:1 }}>
-                      {filteredKnown.filter(k=>k.type===addAssetModal).map(k=>(
-                        <button key={k.symbol} onClick={()=>addAsset(k)} style={{
-                          width:"100%", background:"#0d1117", border:"1px solid #1a2a3a",
-                          borderRadius:10, padding:"10px 14px", marginBottom:8, cursor:"pointer",
-                          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                          <div style={{ textAlign:"left" }}>
-                            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:13, fontWeight:700, color:"#e2f0ff" }}>{k.symbol}</div>
-                            <div style={{ fontSize:11, color:"#4a6080" }}>{k.name}</div>
-                          </div>
-                          <div style={{ fontSize:13, color:"#60a5fa" }}>{fmt(k.price, k.type==="crypto")}</div>
-                        </button>
-                      ))}
-                      {filteredKnown.filter(k=>k.type===addAssetModal).length===0 && (
+                      {filteredKnown.filter(function(k){ return k.type === addAssetModal; }).map(function(k) {
+                        return (
+                          <button key={k.symbol} onClick={function(){ addAssetFn(k); }}
+                            style={{ width:"100%", background:"#0d1117", border:"1px solid #1a2a3a",
+                              borderRadius:10, padding:"10px 14px", marginBottom:8, cursor:"pointer",
+                              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                            <div style={{ textAlign:"left" }}>
+                              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:13, fontWeight:700, color:"#e2f0ff" }}>{k.symbol}</div>
+                              <div style={{ fontSize:11, color:"#4a6080" }}>{k.name}</div>
+                            </div>
+                            <div style={{ fontSize:13, color:"#60a5fa" }}>{fmt(k.price, k.type === "crypto")}</div>
+                          </button>
+                        );
+                      })}
+                      {filteredKnown.filter(function(k){ return k.type === addAssetModal; }).length === 0 && (
                         <div style={{ fontSize:12, color:"#4a6080", textAlign:"center", padding:16 }}>No results found</div>
                       )}
                     </div>
-                    <button onClick={()=>setAddAssetModal(false)}
+                    <button onClick={function(){ setAddAssetModal(false); }}
                       style={{ marginTop:12, background:"#1a2332", border:"none", color:"#94a3b8",
                         borderRadius:10, padding:12, cursor:"pointer", fontSize:13, width:"100%" }}>Cancel</button>
                   </div>
                 </div>
               )}
 
-              {/* Confirm Remove */}
               {confirmRemove && (
                 <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
                   display:"flex", alignItems:"center", justifyContent:"center", zIndex:100, padding:24 }}>
-                  <div style={{ background:"#111822", borderRadius:20, padding:24, width:"100%",
-                    border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
+                  <div style={{ background:"#111822", borderRadius:20, padding:24, width:"100%", border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
                     <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:8 }}>
                       Remove {confirmRemove.symbol}?
                     </div>
@@ -603,9 +637,9 @@ function App() {
                       This will remove <span style={{ color:"#e2f0ff" }}>{confirmRemove.name}</span> from your portfolio and delete any associated alerts.
                     </div>
                     <div style={{ display:"flex", gap:10 }}>
-                      <button onClick={()=>setConfirmRemove(null)}
+                      <button onClick={function(){ setConfirmRemove(null); }}
                         style={{ flex:1, background:"#1a2332", border:"none", color:"#94a3b8", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Cancel</button>
-                      <button onClick={()=>removeAsset(confirmRemove.symbol)}
+                      <button onClick={function(){ removeAssetFn(confirmRemove.symbol); }}
                         style={{ flex:1, background:"#450a0a", border:"1px solid #ef444444", color:"#ef4444", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Remove</button>
                     </div>
                   </div>
@@ -614,109 +648,107 @@ function App() {
             </div>
           )}
 
-          {/* ── ALERTS ── */}
-          {tab==="alerts" && (
+          {tab === "alerts" && (
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <div style={{ fontSize:11, color:"#4a6080", letterSpacing:1 }}>PRICE ALERTS</div>
-                <button onClick={()=>setAddAlertModal(true)}
-                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6",
-                    borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Alert</button>
+                <button onClick={function(){ setAddAlertModal(true); }}
+                  style={{ background:"#1a3a6a", border:"1px solid #3b82f6", color:"#3b82f6", borderRadius:8, padding:"4px 10px", fontSize:11, cursor:"pointer" }}>+ Add Alert</button>
               </div>
 
-              {alerts.map(alert => {
-                const asset = assets.find(a=>a.symbol===alert.symbol);
-                const price = asset?.price||0;
-                const diff  = ((price-alert.target)/alert.target*100).toFixed(1);
-                const isDragging = dragAlert?.id===alert.id;
-                const isOver     = dragAlert?.overId===alert.id && dragAlert?.id!==alert.id;
+              {alerts.map(function(alert) {
+                var asset = null;
+                for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === alert.symbol) { asset = assets[i]; break; } }
+                var price = asset ? asset.price : 0;
+                var diff  = ((price - alert.target) / alert.target * 100).toFixed(1);
+                var isDragging = dragAlert && dragAlert.id === alert.id;
+                var isOver     = dragAlert && dragAlert.overId === alert.id && dragAlert.id !== alert.id;
+                var aid = alert.id;
                 return (
-                  <div key={alert.id} draggable
-                    onDragStart={()=>setDragAlert({id:alert.id,overId:alert.id})}
-                    onDragOver={e=>{ e.preventDefault(); setDragAlert(d=>d?{...d,overId:alert.id}:d); }}
-                    onDragEnd={()=>{ if(dragAlert){reorderAlerts(dragAlert.id,dragAlert.overId);setDragAlert(null);} }}
-                    style={{ background:"#111822", border:`1px solid ${isOver?"#3b82f6":"#1a2a3a"}`,
+                  <div key={alert.id} draggable={true}
+                    onDragStart={function(){ setDragAlert({ id:aid, overId:aid }); }}
+                    onDragOver={function(e){ e.preventDefault(); setDragAlert(function(d){ return d ? { id:d.id, overId:aid } : d; }); }}
+                    onDragEnd={function(){ if (dragAlert) { reorderAlerts(dragAlert.id, dragAlert.overId); setDragAlert(null); } }}
+                    style={{ background:"#111822",
+                      border:"1px solid " + (isOver ? "#3b82f6" : "#1a2a3a"),
                       borderRadius:12, padding:"12px 14px", marginBottom:10,
-                      opacity:isDragging?0.4:alert.active?1:0.5, cursor:"grab",
-                      transform:isOver?"scale(1.01)":"scale(1)",
-                      transition:"border-color 0.15s,transform 0.15s,opacity 0.15s", userSelect:"none" }}>
+                      opacity:isDragging ? 0.4 : alert.active ? 1 : 0.5,
+                      cursor:"grab", userSelect:"none",
+                      transition:"border-color 0.15s, opacity 0.15s" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                       <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
-                        <div style={{ color:"#2a3a4a", fontSize:16, paddingTop:2, cursor:"grab" }}>⠿</div>
+                        <div style={{ color:"#2a3a4a", fontSize:16, paddingTop:2 }}>::</div>
                         <div>
                           <span style={{ fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:700, color:"#e2f0ff" }}>{alert.symbol}</span>
                           <span style={{ fontSize:11, color:"#4a6080", marginLeft:8 }}>
-                            {alert.condition==="above"?"▲ rises above":"▼ drops below"} {fmt(alert.target, asset?.type==="crypto")}
+                            {alert.condition === "above" ? "rises above" : "drops below"} {fmt(alert.target, asset && asset.type === "crypto")}
                           </span>
                           <div style={{ fontSize:11, color:"#4a6080", marginTop:4 }}>
-                            Current: <span style={{ color:"#94a3b8" }}>{asset?fmt(price,asset.type==="crypto"):"—"}</span>
-                            <span style={{ marginLeft:8, color:parseFloat(diff)>=0?"#22c55e":"#ef4444" }}>
-                              {parseFloat(diff)>=0?"+":""}{diff}% away
+                            Current: <span style={{ color:"#94a3b8" }}>{asset ? fmt(price, asset.type === "crypto") : "—"}</span>
+                            <span style={{ marginLeft:8, color:parseFloat(diff) >= 0 ? "#22c55e" : "#ef4444" }}>
+                              {parseFloat(diff) >= 0 ? "+" : ""}{diff}% away
                             </span>
                           </div>
                         </div>
                       </div>
                       <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                        <button onClick={()=>toggleAlert(alert.id)} style={{
-                          background:alert.active?"#052e16":"#1a2332",
-                          border:`1px solid ${alert.active?"#22c55e44":"#1a2332"}`,
-                          borderRadius:6, padding:"3px 8px", fontSize:10,
-                          color:alert.active?"#22c55e":"#4a6080", cursor:"pointer" }}>
-                          {alert.active?"ON":"OFF"}
+                        <button onClick={function(){ toggleAlertFn(aid); }}
+                          style={{ background:alert.active ? "#052e16" : "#1a2332",
+                            border:"1px solid " + (alert.active ? "#22c55e44" : "#1a2332"),
+                            borderRadius:6, padding:"3px 8px", fontSize:10,
+                            color:alert.active ? "#22c55e" : "#4a6080", cursor:"pointer" }}>
+                          {alert.active ? "ON" : "OFF"}
                         </button>
-                        <button onClick={()=>setEditAlert({id:alert.id,target:String(alert.target)})}
+                        <button onClick={function(){ setEditAlert({ id:aid, target:String(alert.target) }); }}
                           style={{ background:"none", border:"1px solid #1a2a3a", color:"#60a5fa", cursor:"pointer",
-                            fontSize:12, borderRadius:6, width:26, height:26, display:"flex",
-                            alignItems:"center", justifyContent:"center" }}>✏️</button>
-                        <button onClick={()=>removeAlert(alert.id)}
-                          style={{ background:"none", border:"none", color:"#4a6080", cursor:"pointer", fontSize:14 }}>✕</button>
+                            fontSize:11, borderRadius:6, padding:"3px 6px" }}>edit</button>
+                        <button onClick={function(){ removeAlertFn(aid); }}
+                          style={{ background:"none", border:"none", color:"#4a6080", cursor:"pointer", fontSize:14 }}>x</button>
                       </div>
                     </div>
                   </div>
                 );
               })}
 
-              {/* Add Alert Modal */}
-              {addAlertModal && (()=>{
-                const selAsset   = assets.find(a=>a.symbol===newAlert.symbol);
-                const target     = parseFloat(newAlert.target);
-                const hasTarget  = newAlert.target!==""&&!isNaN(target);
-                const autoCond   = hasTarget&&selAsset ? (target>=selAsset.price?"above":"below") : null;
+              {addAlertModal && (function() {
+                var selAsset = null;
+                for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === newAlert.symbol) { selAsset = assets[i]; break; } }
+                var target   = parseFloat(newAlert.target);
+                var hasTarget = newAlert.target !== "" && !isNaN(target);
+                var autoCond  = hasTarget && selAsset ? (target >= selAsset.price ? "above" : "below") : null;
                 return (
-                  <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
-                    display:"flex", alignItems:"flex-end", zIndex:100 }}>
-                    <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%",
-                      border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
+                  <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", alignItems:"flex-end", zIndex:100 }}>
+                    <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%", border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
                       <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:16 }}>New Price Alert</div>
                       <div style={{ marginBottom:12 }}>
                         <div style={{ fontSize:11, color:"#4a6080", marginBottom:6 }}>ASSET</div>
-                        <select value={newAlert.symbol} onChange={e=>setNewAlert(p=>({...p,symbol:e.target.value}))}
-                          style={{ width:"100%", background:"#0d1117", border:"1px solid #1a2a3a",
-                            color:"#e2f0ff", borderRadius:8, padding:"8px 12px", fontSize:13 }}>
-                          {allSymbols.map(s=><option key={s} value={s}>{s}</option>)}
+                        <select value={newAlert.symbol}
+                          onChange={function(e){ var v = e.target.value; setNewAlert(function(p){ return { symbol:v, target:p.target }; }); }}
+                          style={{ width:"100%", background:"#0d1117", border:"1px solid #1a2a3a", color:"#e2f0ff", borderRadius:8, padding:"8px 12px", fontSize:13 }}>
+                          {allSymbols.map(function(s){ return <option key={s} value={s}>{s}</option>; })}
                         </select>
                         {selAsset && (
                           <div style={{ fontSize:11, color:"#4a6080", marginTop:5 }}>
-                            Current price: <span style={{ color:"#94a3b8" }}>{fmt(selAsset.price,selAsset.type==="crypto")}</span>
+                            Current: <span style={{ color:"#94a3b8" }}>{fmt(selAsset.price, selAsset.type === "crypto")}</span>
                           </div>
                         )}
                       </div>
                       <div style={{ marginBottom:16 }}>
                         <div style={{ fontSize:11, color:"#4a6080", marginBottom:6 }}>TARGET PRICE</div>
                         <input type="number" value={newAlert.target}
-                          onChange={e=>setNewAlert(p=>({...p,target:e.target.value}))}
-                          placeholder={selAsset?`e.g. ${(selAsset.price*1.05).toFixed(2)}`:"Enter price"}
+                          onChange={function(e){ var v = e.target.value; setNewAlert(function(p){ return { symbol:p.symbol, target:v }; }); }}
+                          placeholder={selAsset ? "e.g. " + (selAsset.price * 1.05).toFixed(2) : "Enter price"}
                           style={{ width:"100%", background:"#0d1117", boxSizing:"border-box",
-                            border:`1px solid ${autoCond?(autoCond==="above"?"#22c55e55":"#ef444455"):"#1a2a3a"}`,
+                            border:"1px solid " + (autoCond ? (autoCond === "above" ? "#22c55e55" : "#ef444455") : "#1a2a3a"),
                             color:"#e2f0ff", borderRadius:8, padding:"8px 12px", fontSize:13 }} />
                         <div style={{ marginTop:8, minHeight:28, display:"flex", alignItems:"center" }}>
                           {autoCond ? (
                             <div style={{ display:"inline-flex", alignItems:"center", gap:6,
-                              background:autoCond==="above"?"#052e16":"#450a0a",
-                              border:`1px solid ${autoCond==="above"?"#22c55e44":"#ef444444"}`,
+                              background:autoCond === "above" ? "#052e16" : "#450a0a",
+                              border:"1px solid " + (autoCond === "above" ? "#22c55e44" : "#ef444444"),
                               borderRadius:8, padding:"4px 10px", fontSize:12,
-                              color:autoCond==="above"?"#22c55e":"#ef4444" }}>
-                              {autoCond==="above"?"▲":"▼"} Alert when {newAlert.symbol} {autoCond==="above"?"reaches or exceeds":"drops to or below"} {fmt(target, selAsset?.type==="crypto")}
+                              color:autoCond === "above" ? "#22c55e" : "#ef4444" }}>
+                              Alert when {newAlert.symbol} {autoCond === "above" ? "reaches or exceeds" : "drops to or below"} {fmt(target, selAsset && selAsset.type === "crypto")}
                             </div>
                           ) : (
                             <div style={{ fontSize:11, color:"#4a6080" }}>Enter a target price to see the alert condition</div>
@@ -724,54 +756,53 @@ function App() {
                         </div>
                       </div>
                       <div style={{ display:"flex", gap:10 }}>
-                        <button onClick={()=>setAddAlertModal(false)}
+                        <button onClick={function(){ setAddAlertModal(false); }}
                           style={{ flex:1, background:"#1a2332", border:"none", color:"#94a3b8", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Cancel</button>
-                        <button onClick={addAlert} disabled={!hasTarget}
-                          style={{ flex:2, background:hasTarget?"#1a3a6a":"#111",
-                            border:`1px solid ${hasTarget?"#3b82f6":"#1a2a3a"}`,
-                            color:hasTarget?"#60a5fa":"#333", borderRadius:10, padding:12,
-                            cursor:hasTarget?"pointer":"default", fontSize:13, fontWeight:500 }}>Set Alert</button>
+                        <button onClick={addAlertFn} disabled={!hasTarget}
+                          style={{ flex:2, background:hasTarget ? "#1a3a6a" : "#111",
+                            border:"1px solid " + (hasTarget ? "#3b82f6" : "#1a2a3a"),
+                            color:hasTarget ? "#60a5fa" : "#333", borderRadius:10, padding:12,
+                            cursor:hasTarget ? "pointer" : "default", fontSize:13, fontWeight:500 }}>Set Alert</button>
                       </div>
                     </div>
                   </div>
                 );
               })()}
 
-              {/* Edit Alert Modal */}
-              {editAlert && (()=>{
-                const alert    = alerts.find(a=>a.id===editAlert.id);
-                const asset    = assets.find(a=>a.symbol===alert?.symbol);
-                const target   = parseFloat(editAlert.target);
-                const hasTarget= editAlert.target!==""&&!isNaN(target);
-                const autoCond = hasTarget&&asset?(target>=asset.price?"above":"below"):null;
+              {editAlert && (function() {
+                var ealert = null;
+                for (var i = 0; i < alerts.length; i++) { if (alerts[i].id === editAlert.id) { ealert = alerts[i]; break; } }
+                var easset = null;
+                if (ealert) { for (var i = 0; i < assets.length; i++) { if (assets[i].symbol === ealert.symbol) { easset = assets[i]; break; } } }
+                var target   = parseFloat(editAlert.target);
+                var hasTarget = editAlert.target !== "" && !isNaN(target);
+                var autoCond  = hasTarget && easset ? (target >= easset.price ? "above" : "below") : null;
                 return (
-                  <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)",
-                    display:"flex", alignItems:"flex-end", zIndex:100 }}>
-                    <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%",
-                      border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
+                  <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", alignItems:"flex-end", zIndex:100 }}>
+                    <div style={{ background:"#111822", borderRadius:"20px 20px 0 0", padding:24, width:"100%", border:"1px solid #1a2a3a", boxSizing:"border-box" }}>
                       <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", marginBottom:4 }}>Edit Alert</div>
-                      <div style={{ fontSize:12, color:"#4a6080", marginBottom:16 }}>{alert?.symbol}</div>
+                      <div style={{ fontSize:12, color:"#4a6080", marginBottom:16 }}>{ealert && ealert.symbol}</div>
                       <div style={{ marginBottom:8 }}>
                         <div style={{ fontSize:11, color:"#4a6080", marginBottom:6 }}>NEW TARGET PRICE</div>
                         <input type="number" value={editAlert.target} autoFocus
-                          onChange={e=>setEditAlert(p=>({...p,target:e.target.value}))}
-                          placeholder={String(alert?.target)}
+                          onChange={function(e){ var v = e.target.value; setEditAlert(function(p){ return { id:p.id, target:v }; }); }}
+                          placeholder={ealert ? String(ealert.target) : ""}
                           style={{ width:"100%", background:"#0d1117", boxSizing:"border-box",
-                            border:`1px solid ${autoCond?(autoCond==="above"?"#22c55e55":"#ef444455"):"#3b82f6"}`,
+                            border:"1px solid " + (autoCond ? (autoCond === "above" ? "#22c55e55" : "#ef444455") : "#3b82f6"),
                             color:"#e2f0ff", borderRadius:8, padding:"10px 12px", fontSize:15 }} />
-                        {asset && (
+                        {easset && (
                           <div style={{ fontSize:11, color:"#4a6080", marginTop:6 }}>
-                            Current price: <span style={{ color:"#94a3b8" }}>{fmt(asset.price,asset.type==="crypto")}</span>
+                            Current: <span style={{ color:"#94a3b8" }}>{fmt(easset.price, easset.type === "crypto")}</span>
                           </div>
                         )}
                         <div style={{ marginTop:8, minHeight:28, display:"flex", alignItems:"center" }}>
                           {autoCond ? (
                             <div style={{ display:"inline-flex", alignItems:"center", gap:6,
-                              background:autoCond==="above"?"#052e16":"#450a0a",
-                              border:`1px solid ${autoCond==="above"?"#22c55e44":"#ef444444"}`,
+                              background:autoCond === "above" ? "#052e16" : "#450a0a",
+                              border:"1px solid " + (autoCond === "above" ? "#22c55e44" : "#ef444444"),
                               borderRadius:8, padding:"4px 10px", fontSize:12,
-                              color:autoCond==="above"?"#22c55e":"#ef4444" }}>
-                              {autoCond==="above"?"▲":"▼"} Alert when {alert?.symbol} {autoCond==="above"?"reaches or exceeds":"drops to or below"} {fmt(target,asset?.type==="crypto")}
+                              color:autoCond === "above" ? "#22c55e" : "#ef4444" }}>
+                              Alert when {ealert && ealert.symbol} {autoCond === "above" ? "reaches or exceeds" : "drops to or below"} {fmt(target, easset && easset.type === "crypto")}
                             </div>
                           ) : (
                             <div style={{ fontSize:11, color:"#4a6080" }}>Enter a new target to preview the condition</div>
@@ -779,13 +810,13 @@ function App() {
                         </div>
                       </div>
                       <div style={{ display:"flex", gap:10, marginTop:12 }}>
-                        <button onClick={()=>setEditAlert(null)}
+                        <button onClick={function(){ setEditAlert(null); }}
                           style={{ flex:1, background:"#1a2332", border:"none", color:"#94a3b8", borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>Cancel</button>
                         <button onClick={updateAlertTarget} disabled={!hasTarget}
-                          style={{ flex:2, background:hasTarget?"#1a3a6a":"#111",
-                            border:`1px solid ${hasTarget?"#3b82f6":"#1a2a3a"}`,
-                            color:hasTarget?"#60a5fa":"#333", borderRadius:10, padding:12,
-                            cursor:hasTarget?"pointer":"default", fontSize:13, fontWeight:500 }}>Save Target</button>
+                          style={{ flex:2, background:hasTarget ? "#1a3a6a" : "#111",
+                            border:"1px solid " + (hasTarget ? "#3b82f6" : "#1a2a3a"),
+                            color:hasTarget ? "#60a5fa" : "#333", borderRadius:10, padding:12,
+                            cursor:hasTarget ? "pointer" : "default", fontSize:13, fontWeight:500 }}>Save Target</button>
                       </div>
                     </div>
                   </div>
@@ -794,13 +825,14 @@ function App() {
             </div>
           )}
 
-          {/* ── NEWS ── */}
-          {tab==="news" && (
+          {tab === "news" && (
             <div>
               {selectedNews ? (
                 <div>
-                  <button onClick={()=>setSelectedNews(null)}
-                    style={{ background:"none", border:"none", color:"#3b82f6", cursor:"pointer", fontSize:13, marginBottom:12, padding:0 }}>← Back to News</button>
+                  <button onClick={function(){ setSelectedNews(null); }}
+                    style={{ background:"none", border:"none", color:"#3b82f6", cursor:"pointer", fontSize:13, marginBottom:12, padding:0 }}>
+                    Back to News
+                  </button>
                   <div style={{ background:"#111822", border:"1px solid #1a2a3a", borderRadius:16, padding:20 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
                       <span style={{ background:"#1a2a3a", color:"#60a5fa", padding:"3px 8px", borderRadius:6, fontSize:11, fontWeight:500 }}>{selectedNews.symbol}</span>
@@ -809,7 +841,7 @@ function App() {
                     <div style={{ fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700, color:"#e2f0ff", lineHeight:1.4, marginBottom:12 }}>{selectedNews.title}</div>
                     <div style={{ fontSize:13, color:"#94a3b8", lineHeight:1.6, marginBottom:16 }}>{selectedNews.summary}</div>
                     <div style={{ background:sentimentBg[selectedNews.sentiment],
-                      border:`1px solid ${sentimentColor[selectedNews.sentiment]}44`,
+                      border:"1px solid " + sentimentColor[selectedNews.sentiment] + "44",
                       borderRadius:12, padding:"12px 14px" }}>
                       <div style={{ fontSize:11, color:sentimentColor[selectedNews.sentiment], marginBottom:6, fontWeight:500, letterSpacing:0.5 }}>AI ADVICE</div>
                       <div style={{ fontSize:13, color:"#cbd5e1", lineHeight:1.5 }}>{selectedNews.advice}</div>
@@ -819,46 +851,48 @@ function App() {
               ) : (
                 <div>
                   <div style={{ fontSize:11, color:"#4a6080", marginBottom:12, letterSpacing:1 }}>TODAY'S BRIEFING</div>
-                  {NEWS.map(n=>(
-                    <button key={n.id} onClick={()=>setSelectedNews(n)} style={{
-                      width:"100%", background:"#111822", border:"1px solid #1a2a3a",
-                      borderRadius:12, padding:"14px", marginBottom:10, cursor:"pointer", textAlign:"left" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                        <span style={{ background:"#1a2a3a", color:"#60a5fa", padding:"2px 8px", borderRadius:6, fontSize:11 }}>{n.symbol}</span>
-                        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                          <span style={{ width:6, height:6, borderRadius:"50%", background:sentimentColor[n.sentiment], display:"inline-block" }} />
-                          <span style={{ fontSize:11, color:"#4a6080" }}>{n.time}</span>
+                  {NEWS.map(function(n) {
+                    return (
+                      <button key={n.id} onClick={function(){ setSelectedNews(n); }}
+                        style={{ width:"100%", background:"#111822", border:"1px solid #1a2a3a",
+                          borderRadius:12, padding:"14px", marginBottom:10, cursor:"pointer", textAlign:"left" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                          <span style={{ background:"#1a2a3a", color:"#60a5fa", padding:"2px 8px", borderRadius:6, fontSize:11 }}>{n.symbol}</span>
+                          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                            <span style={{ width:6, height:6, borderRadius:"50%", background:sentimentColor[n.sentiment], display:"inline-block" }} />
+                            <span style={{ fontSize:11, color:"#4a6080" }}>{n.time}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ fontSize:13, fontWeight:500, color:"#cbd5e1", lineHeight:1.4, marginBottom:6 }}>{n.title}</div>
-                      <div style={{ fontSize:11, color:"#4a6080" }}>Tap for AI advice →</div>
-                    </button>
-                  ))}
+                        <div style={{ fontSize:13, fontWeight:500, color:"#cbd5e1", lineHeight:1.4, marginBottom:6 }}>{n.title}</div>
+                        <div style={{ fontSize:11, color:"#4a6080" }}>Tap for AI advice</div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Bottom nav */}
         <div style={{ position:"absolute", bottom:0, left:0, right:0,
           background:"rgba(13,17,23,0.95)", backdropFilter:"blur(20px)",
           borderTop:"1px solid #1a2332", padding:"8px 0 24px", display:"flex", justifyContent:"space-around" }}>
-          {[{key:"portfolio",icon:"📈",label:"Portfolio"},{key:"alerts",icon:"🔔",label:"Alerts"},{key:"news",icon:"📰",label:"News"}].map(t=>(
-            <button key={t.key} onClick={()=>setTab(t.key)}
-              style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column",
-                alignItems:"center", gap:2, opacity:tab===t.key?1:0.4, transition:"opacity 0.2s" }}>
-              <span style={{ fontSize:20 }}>{t.icon}</span>
-              <span style={{ fontSize:10, color:tab===t.key?"#3b82f6":"#4a6080" }}>{t.label}</span>
-            </button>
-          ))}
+          {[{key:"portfolio",label:"Portfolio"},{key:"alerts",label:"Alerts"},{key:"news",label:"News"}].map(function(t) {
+            return (
+              <button key={t.key} onClick={function(){ setTab(t.key); }}
+                style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column",
+                  alignItems:"center", gap:2, opacity:tab === t.key ? 1 : 0.4, transition:"opacity 0.2s" }}>
+                <span style={{ fontSize:10, color:tab === t.key ? "#3b82f6" : "#4a6080" }}>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
 </script>
 </body>
 </html>
